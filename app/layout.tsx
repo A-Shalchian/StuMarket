@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import ChatDock from "@/app/components/ChatDock";
+import UserBadge from "@/app/components/UserBadge";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,8 +29,25 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <header className="w-full border-b border-black/[.08] dark:border-white/[.145]">
+          <div className="max-w-5xl mx-auto flex items-center justify-between p-4">
+            <a href="/" className="font-semibold text-lg">College Market</a>
+            <nav className="flex gap-4 text-sm items-center">
+              <a href="/" className="hover:underline">Browse</a>
+              <a href="/sell" className="hover:underline">Sell</a>
+              <a href="/events" className="hover:underline">Events</a>
+              <a href="/signup" className="hover:underline">Sign up</a>
+              <UserBadge />
+            </nav>
+          </div>
+        </header>
+        <main className="max-w-5xl mx-auto p-4">{children}</main>
+        {/* Floating chat dock */}
+        {/* @ts-expect-error Client Component */}
+        <ChatDock />
       </body>
     </html>
   );
 }
+
+// client-only code moved to app/components/UserBadge.tsx
