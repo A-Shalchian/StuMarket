@@ -8,8 +8,18 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient()
-    await supabase.auth.exchangeCodeForSession(code)
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+
+    if (error) {
+      console.error('Auth callback error:', error)
+      return NextResponse.redirect(`${origin}/login?error=auth_failed`)
+    }
+
+    if (data.user) {
+      // Simply redirect to dashboard - no verification required
+      return NextResponse.redirect(`${origin}/dashboard`)
+    }
   }
 
-  return NextResponse.redirect(`${origin}/dashboard`)
+  return NextResponse.redirect(`${origin}/login?error=no_code`)
 }
