@@ -43,12 +43,13 @@ export async function updateSession(request: NextRequest) {
 
   // Redirect to login if accessing protected route without auth
   if (!user && isProtectedRoute) {
-    url.pathname = '/'
+    url.pathname = '/login'
     return NextResponse.redirect(url)
   }
 
-  // Redirect to dashboard if logged in and accessing login page
-  if (user && url.pathname === '/') {
+  // Allow users to access home page and other public pages when logged in
+  // Only redirect from /login page if already authenticated
+  if (user && url.pathname === '/login') {
     url.pathname = '/dashboard'
     return NextResponse.redirect(url)
   }

@@ -3,8 +3,8 @@ import { AuthProvider } from "@/components/providers/auth-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "College Marketplace",
-  description: "Buy and sell items on your college campus",
+  title: "StuMarket - College Student Marketplace",
+  description: "The simple, safe marketplace for college students to buy and sell locally",
 };
 
 export default function RootLayout({
@@ -14,10 +14,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`antialiased`}>
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+      <body className={`antialiased`} suppressHydrationWarning>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
       </body>
     </html>
   );
