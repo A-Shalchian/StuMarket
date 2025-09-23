@@ -3,7 +3,6 @@
 import Link from 'next/link'
 import { useAuth } from '@/components/providers/auth-provider'
 import UserMenu from '@/components/layout/user-menu'
-import ThemeToggle from '@/components/layout/theme-toggle-debug'
 
 export default function Navbar() {
   const { user, loading } = useAuth()
@@ -28,7 +27,6 @@ export default function Navbar() {
                     >
                       Sell Item
                     </Link>
-                    <ThemeToggle />
                     <UserMenu />
                   </>
                 ) : (
@@ -45,7 +43,6 @@ export default function Navbar() {
                     >
                       About
                     </Link>
-                    <ThemeToggle />
                     <Link
                       href="/login"
                       className="px-4 py-2 text-sm font-medium text-white bg-accent hover:bg-accent-hover rounded-lg transition-colors"
