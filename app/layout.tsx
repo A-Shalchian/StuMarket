@@ -35,6 +35,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <ThemeScript />
+        <script src="https://accounts.google.com/gsi/client" async defer></script>
       </head>
       <body className={`antialiased`} suppressHydrationWarning>
           <AuthProvider>
