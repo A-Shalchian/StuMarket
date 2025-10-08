@@ -1,12 +1,16 @@
-"use client";
+ "use client";
 
 import { createClient } from "@/lib/supabase/client";
 import { useState } from "react";
 import Link from "next/link";
+import "./login.css";
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isEmailLoading, setIsEmailLoading] = useState(false);
   const supabase = createClient();
 
   const handleGoogleLogin = async () => {
@@ -26,46 +30,107 @@ export default function LoginPage() {
     }
   };
 
+  // const handleOneTapSuccess = () => {
+  //   window.location.href = '/dashboard';
+  // };
+
+  // const handleOneTapError = (error: string) => {
+  //   setError(error);
+  // };
+
+  const handleEmailAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsEmailLoading(true);
+    setError(null);
+
+    if (!email || !password) {
+      setError("Please fill in all fields");
+      setIsEmailLoading(false);
+      return;
+    }
+
+    try {
+      // First, try to sign in (for existing users)
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (signInData.user && !signInError) {
+        // Success! User signed in
+        window.location.href = '/dashboard';
+        return;
+      }
+
+      // If sign in failed, check if it's because user doesn't exist
+      if (signInError?.message?.includes('Invalid login credentials')) {
+        // Try to sign up the user (new user)
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+        });
+
+        if (signUpError) {
+          setError(signUpError.message);
+          setIsEmailLoading(false);
+          return;
+        }
+
+        if (signUpData.user) {
+          // Check if email confirmation is required
+          if (!signUpData.session) {
+            setError("Please check your email to confirm your account before signing in.");
+          } else {
+            // User created and signed in successfully
+            window.location.href = '/dashboard';
+          }
+        }
+      } else {
+        // Other sign in error
+        setError(signInError?.message || "Failed to sign in");
+      }
+    } catch (err) {
+      console.error("Email authentication error:", err);
+      setError("An unexpected error occurred");
+    } finally {
+      setIsEmailLoading(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden">
-      {/* Background decoration */}
+    <div className="min-h-screen pt-20 pb-8 px-4 bg-background relative overflow-hidden flex items-center justify-center">
+      {/* Google One Tap - Temporarily disabled due to FedCM issues */}
+      {/* <GoogleOneTap onSuccess={handleOneTapSuccess} onError={handleOneTapError} /> */}
+
+      {/* Enhanced Background decoration with animations */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-accent/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-accent/10 rounded-full blur-3xl" />
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-accent/10 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-accent/10 rounded-full blur-3xl animate-pulse" style={{animationDelay: '1s'}} />
+        <div className="absolute top-1/2 left-1/4 w-32 h-32 bg-accent/5 rounded-full blur-2xl animate-bounce" style={{animationDelay: '2s', animationDuration: '3s'}} />
+        <div className="absolute bottom-1/4 right-1/4 w-24 h-24 bg-accent/5 rounded-full blur-xl animate-pulse" style={{animationDelay: '0.5s'}} />
       </div>
 
-      {/* Login Card */}
-      <div className="relative z-10 w-full max-w-md px-4">
-        <div className="bg-background/50 backdrop-blur-xl border border-surface/50 rounded-2xl p-8 shadow-2xl">
-          {/* Logo */}
-          <div className="text-center mb-8">
-            <Link href="/" className="inline-block">
-              <h1 className="text-4xl font-bold">
-                <span className="text-text">Stu</span>
-                <span className="text-accent">Market</span>
-              </h1>
-            </Link>
-            <p className="mt-3 text-text/60 text-sm">
-              Your campus marketplace awaits
-            </p>
-          </div>
+      {/* Login Card with entrance animation */}
+      <div className="relative z-10 w-full max-w-sm sm:max-w-md animate-fade-in-up">
+        <div className="bg-background/60 backdrop-blur-xl border border-surface/50 rounded-2xl p-6 sm:p-8 shadow-2xl hover:shadow-3xl transition-all duration-500 hover:border-accent/20 group">
 
-          {/* Welcome Message */}
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-semibold text-text mb-2">
+          {/* Welcome Message with stagger animation */}
+          <div className="text-center mb-6 sm:mb-8 animate-fade-in" style={{animationDelay: '0.2s'}}>
+            <h2 className="text-xl sm:text-2xl font-semibold text-text mb-2 group-hover:text-accent transition-colors duration-300">
               Welcome Back
             </h2>
-            <p className="text-text/70 text-sm">
+            <p className="text-text/70 text-sm animate-fade-in" style={{animationDelay: '0.4s'}}>
               Sign in to connect with your college community
             </p>
           </div>
 
-          {/* Google Login Button */}
-          <button
-            onClick={handleGoogleLogin}
-            disabled={isLoading}
-            className="w-full group relative flex items-center justify-center gap-3 px-6 py-4 bg-background hover:bg-surface/50 border border-surface rounded-xl transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-          >
+          {/* Google Login Button with enhanced animations */}
+          <div className="animate-fade-in" style={{animationDelay: '0.6s'}}>
+            <button
+              onClick={handleGoogleLogin}
+              disabled={isLoading}
+              className="w-full group/google relative flex items-center justify-center gap-3 px-4 sm:px-6 py-3 sm:py-4 bg-background hover:bg-surface/50 border border-surface rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed hover:border-accent/30"
+            >
             {!isLoading && (
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path
@@ -86,72 +151,102 @@ export default function LoginPage() {
                 />
               </svg>
             )}
-            <span className="font-medium text-text">
-              {isLoading ? "Signing in..." : "Continue with Google"}
-            </span>
-            {isLoading && (
-              <div className="absolute right-4">
-                <svg className="animate-spin h-5 w-5 text-accent" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                </svg>
-              </div>
-            )}
-          </button>
+              <span className="font-medium text-text group-hover/google:text-accent transition-colors duration-300">
+                {isLoading ? "Signing in..." : "Continue with Google"}
+              </span>
+              {isLoading && (
+                <div className="absolute right-4">
+                  <svg className="animate-spin h-5 w-5 text-accent" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                </div>
+              )}
+            </button>
+          </div>
 
-          {/* Error Message */}
+          {/* Animated Divider */}
+          <div className="relative my-6 sm:my-8 animate-fade-in" style={{animationDelay: '0.8s'}}>
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-surface/50 group-hover:border-accent/20 transition-colors duration-500" />
+            </div>
+            <div className="relative flex justify-center text-xs">
+              <span className="px-4 text-text/50 bg-background group-hover:text-accent/70 transition-colors duration-300">or</span>
+            </div>
+          </div>
+
+          {/* Email/Password Form with stagger animations */}
+          <form onSubmit={handleEmailAuth} className="space-y-3 sm:space-y-4 animate-fade-in" style={{animationDelay: '1s'}}>
+            <div className="animate-slide-in-left" style={{animationDelay: '1.2s'}}>
+              <input
+                type="email"
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-background border border-surface rounded-xl focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent focus:scale-[1.02] transition-all duration-300 text-text placeholder-text/50 text-sm sm:text-base hover:border-accent/30"
+                disabled={isEmailLoading}
+              />
+            </div>
+            <div className="animate-slide-in-left" style={{animationDelay: '1.4s'}}>
+              <input
+                type="password"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-background border border-surface rounded-xl focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent focus:scale-[1.02] transition-all duration-300 text-text placeholder-text/50 text-sm sm:text-base hover:border-accent/30"
+                disabled={isEmailLoading}
+              />
+            </div>
+            <div className="animate-slide-in-left" style={{animationDelay: '1.6s'}}>
+              <button
+                type="submit"
+                disabled={isEmailLoading || !email || !password}
+                className="w-full group/submit relative flex items-center justify-center gap-3 px-4 sm:px-6 py-3 sm:py-4 bg-accent hover:bg-accent-hover text-white border border-accent rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-accent/25"
+              >
+                <span className="font-medium group-hover/submit:scale-105 transition-transform duration-200">
+                  {isEmailLoading ? "Please wait..." : "Continue"}
+                </span>
+                {isEmailLoading && (
+                  <div className="absolute right-4">
+                    <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                  </div>
+                )}
+              </button>
+            </div>
+          </form>
+
+          {/* Error Message with animation */}
           {error && (
-            <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+            <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg animate-shake animate-fade-in">
               <p className="text-sm text-red-500 text-center">{error}</p>
             </div>
           )}
 
-          {/* Divider */}
-          <div className="relative my-8">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-surface/50" />
-            </div>
-            <div className="relative flex justify-center text-xs">
-              <span className="px-4 text-text/50 bg-background">Secure login</span>
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div className="text-center space-y-2">
-            <p className="text-xs text-text/50">
+          {/* Footer with delayed animation */}
+          <div className="text-center space-y-2 mt-6 sm:mt-8 animate-fade-in" style={{animationDelay: '1.8s'}}>
+            <p className="text-xs text-text/50 group-hover:text-text/70 transition-colors duration-300">
               By signing in, you agree to our
             </p>
-            <div className="flex items-center justify-center gap-4 text-xs">
-              <button className="text-accent hover:text-accent-hover transition-colors">
+            <div className="flex items-center justify-center gap-3 sm:gap-4 text-xs">
+              <button className="text-accent hover:text-accent-hover hover:scale-105 transition-all duration-200">
                 Terms of Service
               </button>
               <span className="text-text/30">•</span>
-              <button className="text-accent hover:text-accent-hover transition-colors">
+              <button className="text-accent hover:text-accent-hover hover:scale-105 transition-all duration-200">
                 Privacy Policy
               </button>
             </div>
           </div>
 
-          {/* Student Only Notice */}
-          <div className="mt-8 p-3 bg-accent/5 rounded-lg border border-accent/10">
-            <div className="flex items-center gap-2 justify-center">
-              <svg className="w-4 h-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14v7" />
-              </svg>
-              <span className="text-xs text-accent font-medium">Students Only</span>
-            </div>
-            <p className="text-xs text-text/60 text-center mt-1">
-              Exclusive access for verified college students
-            </p>
-          </div>
         </div>
 
-        {/* Back to Home */}
-        <div className="text-center mt-6">
-          <Link href="/" className="text-sm text-text/60 hover:text-text transition-colors inline-flex items-center gap-2">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        {/* Back to Home with animation */}
+        <div className="text-center mt-4 sm:mt-6 animate-fade-in" style={{animationDelay: '2s'}}>
+          <Link href="/" className="text-xs sm:text-sm text-text/60 hover:text-accent transition-all duration-300 inline-flex items-center gap-2 hover:scale-105 group/back">
+            <svg className="w-4 h-4 group-hover/back:-translate-x-1 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
             Back to home
