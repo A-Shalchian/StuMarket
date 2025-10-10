@@ -5,8 +5,32 @@ import { createClient } from "@/lib/supabase/client";
 
 declare global {
   interface Window {
-    google: any;
+    google: {
+      accounts: {
+        id: {
+          initialize: (config: GoogleOneTapConfig) => void;
+          prompt: (callback: (notification: GooglePromptNotification) => void) => void;
+        };
+      };
+    };
   }
+}
+
+interface GoogleOneTapConfig {
+  client_id: string;
+  callback: (response: GoogleCredentialResponse) => void;
+  auto_select?: boolean;
+  cancel_on_tap_outside?: boolean;
+}
+
+interface GoogleCredentialResponse {
+  credential: string;
+}
+
+interface GooglePromptNotification {
+  isNotDisplayed: () => boolean;
+  isSkippedMoment: () => boolean;
+  getNotDisplayedReason?: () => string;
 }
 
 interface GoogleOneTapProps {
@@ -37,7 +61,7 @@ export default function GoogleOneTap({ onSuccess, onError }: GoogleOneTapProps) 
         });
 
         // Show the One Tap prompt
-        window.google.accounts.id.prompt((notification: any) => {
+        window.google.accounts.id.prompt((notification: GooglePromptNotification) => {
           if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
             // One Tap was not displayed - user might not be signed into Google
             console.log("Google One Tap not displayed:", notification.getNotDisplayedReason?.() || 'Unknown reason');
@@ -47,7 +71,7 @@ export default function GoogleOneTap({ onSuccess, onError }: GoogleOneTapProps) 
     };
 
     // Handle the credential response from Google One Tap
-    const handleCredentialResponse = async (response: any) => {
+    const handleCredentialResponse = async (response: GoogleCredentialResponse) => {
       try {
         // The response.credential contains the JWT token from Google
         const { data, error } = await supabase.auth.signInWithIdToken({
@@ -86,7 +110,7 @@ export default function GoogleOneTap({ onSuccess, onError }: GoogleOneTapProps) 
       // Cleanup interval if component unmounts
       return () => clearInterval(checkGoogle);
     }
-  }, []);
+  }, [onSuccess, onError, supabase.auth]);
 
   // This component doesn't render anything visible
   return null;

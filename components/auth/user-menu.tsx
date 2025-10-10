@@ -3,6 +3,7 @@
 import { useAuth } from '@/components/providers/auth-provider'
 import { signOut } from '@/lib/supabase/auth-client'
 import { useState } from 'react'
+import Image from 'next/image'
 
 export default function UserMenu() {
   const { user } = useAuth()
@@ -16,10 +17,12 @@ export default function UserMenu() {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 transition-colors"
       >
-        <img
+        <Image
           src={user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${user.email}`}
           alt="Avatar"
-          className="w-8 h-8 rounded-full"
+          width={32}
+          height={32}
+          className="rounded-full"
         />
         <span className="text-sm font-medium">{user.email}</span>
       </button>

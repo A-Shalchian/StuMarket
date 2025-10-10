@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import UserMenu from '@/components/auth/user-menu';
 import VerificationModal from '@/components/verification/verification-modal';
 
@@ -16,7 +17,7 @@ interface UserProfile {
 
 interface User {
   id: string;
-  email: string;
+  email?: string;
 }
 
 interface DashboardClientProps {
@@ -171,26 +172,59 @@ export default function DashboardClient({ user, userProfile }: DashboardClientPr
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-            <div className="bg-accent/10 p-6 rounded-lg border border-accent/20">
-              <h3 className="font-semibold text-accent mb-2">Browse Listings</h3>
+            <Link
+              href="/marketplace"
+              className="bg-accent/10 p-6 rounded-lg border border-accent/20 hover:border-accent/40 hover:bg-accent/15 transition-all group"
+            >
+              <div className="flex items-start justify-between mb-2">
+                <h3 className="font-semibold text-accent">Browse Listings</h3>
+                <svg className="w-5 h-5 text-accent opacity-0 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
               <p className="text-text/70 text-sm">
                 Explore items for sale from other students
               </p>
-            </div>
+            </Link>
 
-            <div className="bg-green-500/10 p-6 rounded-lg border border-green-500/20">
-              <h3 className="font-semibold text-green-600 dark:text-green-400 mb-2">Sell Items</h3>
+            <Link
+              href={profile?.is_verified ? "/listings/new" : "/dashboard"}
+              onClick={(e) => {
+                if (!profile?.is_verified) {
+                  e.preventDefault();
+                  setIsModalOpen(true);
+                }
+              }}
+              className="bg-green-500/10 p-6 rounded-lg border border-green-500/20 hover:border-green-500/40 hover:bg-green-500/15 transition-all group"
+            >
+              <div className="flex items-start justify-between mb-2">
+                <h3 className="font-semibold text-green-600 dark:text-green-400">Sell Items</h3>
+                <svg className="w-5 h-5 text-green-600 dark:text-green-400 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
               <p className="text-text/70 text-sm">
-                List your items for other students to buy
+                {profile?.is_verified
+                  ? "List your items for other students to buy"
+                  : "Verify your email to start selling"
+                }
               </p>
-            </div>
+            </Link>
 
-            <div className="bg-purple-500/10 p-6 rounded-lg border border-purple-500/20">
-              <h3 className="font-semibold text-purple-600 dark:text-purple-400 mb-2">Messages</h3>
+            <Link
+              href="/messages"
+              className="bg-purple-500/10 p-6 rounded-lg border border-purple-500/20 hover:border-purple-500/40 hover:bg-purple-500/15 transition-all group"
+            >
+              <div className="flex items-start justify-between mb-2">
+                <h3 className="font-semibold text-purple-600 dark:text-purple-400">Messages</h3>
+                <svg className="w-5 h-5 text-purple-600 dark:text-purple-400 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
               <p className="text-text/70 text-sm">
                 Chat with buyers and sellers
               </p>
-            </div>
+            </Link>
           </div>
         </div>
       </main>

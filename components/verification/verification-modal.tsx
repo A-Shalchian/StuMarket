@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 
 interface VerificationModalProps {
   isOpen: boolean;
@@ -9,13 +8,12 @@ interface VerificationModalProps {
   onSuccess: () => void;
 }
 
-export default function VerificationModal({ isOpen, onClose, onSuccess }: VerificationModalProps) {
+export default function VerificationModal({ isOpen, onClose }: VerificationModalProps) {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const [verificationUrl, setVerificationUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const supabase = createClient();
 
   if (!isOpen) return null;
 
