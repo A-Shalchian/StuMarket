@@ -21,6 +21,26 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Function to increment save count
+CREATE OR REPLACE FUNCTION public.increment_save_count(listing_id UUID)
+RETURNS VOID AS $$
+BEGIN
+  UPDATE public.listings
+  SET save_count = save_count + 1
+  WHERE id = listing_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Function to decrement save count
+CREATE OR REPLACE FUNCTION public.decrement_save_count(listing_id UUID)
+RETURNS VOID AS $$
+BEGIN
+  UPDATE public.listings
+  SET save_count = GREATEST(0, save_count - 1)
+  WHERE id = listing_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 -- ============================================================
 -- USER PROFILES TABLE
 -- ============================================================

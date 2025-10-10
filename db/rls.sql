@@ -75,12 +75,11 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- PROFILES TABLE POLICIES
 -- ============================================================
 
--- Users can view any profile (needed to avoid recursion)
+-- Anyone can view profiles (needed for public marketplace)
 -- Access control happens at application level for sensitive fields
-DROP POLICY IF EXISTS "Users can view profiles" ON public.profiles;
-CREATE POLICY "Users can view profiles"
+DROP POLICY IF EXISTS "Anyone can view profiles" ON public.profiles;
+CREATE POLICY "Anyone can view profiles"
   ON public.profiles FOR SELECT
-  TO authenticated
   USING (true);
 
 -- Users can update their own profile
@@ -129,11 +128,11 @@ CREATE POLICY "Admins can delete categories"
 -- LISTINGS TABLE POLICIES
 -- ============================================================
 
--- Verified students can view active listings
-DROP POLICY IF EXISTS "Verified students can view active listings" ON public.listings;
-CREATE POLICY "Verified students can view active listings"
+-- Anyone can view active listings (public marketplace)
+DROP POLICY IF EXISTS "Anyone can view active listings" ON public.listings;
+CREATE POLICY "Anyone can view active listings"
   ON public.listings FOR SELECT
-  USING (status = 'active' AND is_verified_user());
+  USING (status = 'active');
 
 -- Users can view their own listings (any status)
 DROP POLICY IF EXISTS "Users can view own listings" ON public.listings;
@@ -163,18 +162,27 @@ CREATE POLICY "Users can delete own listings"
 -- LISTING IMAGES TABLE POLICIES
 -- ============================================================
 
--- Users can view images for listings they can see
-DROP POLICY IF EXISTS "Users can view listing images" ON public.listing_images;
-CREATE POLICY "Users can view listing images"
+-- Anyone can view images for active listings
+DROP POLICY IF EXISTS "Anyone can view listing images" ON public.listing_images;
+CREATE POLICY "Anyone can view listing images"
   ON public.listing_images FOR SELECT
   USING (
     EXISTS (
       SELECT 1 FROM public.listings
       WHERE listings.id = listing_id
-      AND (
-        listings.status = 'active' OR
-        listings.seller_id = auth.uid()
-      )
+      AND listings.status = 'active'
+    )
+  );
+
+-- Users can view images for their own listings (any status)
+DROP POLICY IF EXISTS "Users can view own listing images" ON public.listing_images;
+CREATE POLICY "Users can view own listing images"
+  ON public.listing_images FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.listings
+      WHERE listings.id = listing_id
+      AND listings.seller_id = auth.uid()
     )
   );
 
