@@ -1,16 +1,11 @@
--- ============================================================
 -- STUMARKET - COLLEGE MARKETPLACE DATABASE SCHEMA
 -- Complete schema with all tables, indexes, triggers, and functions
--- RLS policies are defined but NOT enabled (for future use)
--- ============================================================
 
 -- Enable required extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pg_trgm"; -- For text search
 
--- ============================================================
 -- UTILITY FUNCTIONS
--- ============================================================
 
 -- Function to automatically update updated_at timestamp
 CREATE OR REPLACE FUNCTION public.set_updated_at()
@@ -41,9 +36,18 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- ============================================================
+-- COLLEGES TABLE
+
+CREATE TABLE IF NOT EXISTS public.colleges (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name TEXT NOT NULL UNIQUE,
+  domain TEXT NOT NULL UNIQUE,
+  location TEXT,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- USER PROFILES TABLE
--- ============================================================
 
 CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -54,8 +58,10 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   avatar_url TEXT,
   bio TEXT,
   phone_number TEXT,
+  date_of_birth DATE,
 
   -- College verification fields
+  college_id UUID REFERENCES public.colleges(id) ON DELETE SET NULL,
   college_name TEXT,
   college_email TEXT UNIQUE,
   college_domain TEXT,
@@ -95,13 +101,45 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 -- Auto-insert profile when a new auth.user is created
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
+DECLARE
+  v_college_id UUID;
+  v_domain TEXT;
 BEGIN
-  INSERT INTO public.profiles (id, full_name, email, avatar_url)
+  -- Extract domain from college_email
+  v_domain := COALESCE(
+    NEW.raw_user_meta_data->>'college_domain',
+    SPLIT_PART(NEW.raw_user_meta_data->>'college_email', '@', 2)
+  );
+
+  -- Find college by domain
+  IF v_domain IS NOT NULL THEN
+    SELECT id INTO v_college_id
+    FROM public.colleges
+    WHERE domain = v_domain AND is_active = true
+    LIMIT 1;
+  END IF;
+
+  INSERT INTO public.profiles (
+    id,
+    full_name,
+    email,
+    avatar_url,
+    date_of_birth,
+    college_id,
+    college_name,
+    college_email,
+    college_domain
+  )
   VALUES (
     NEW.id,
     COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'name'),
     NEW.email,
-    NEW.raw_user_meta_data->>'avatar_url'
+    NEW.raw_user_meta_data->>'avatar_url',
+    (NEW.raw_user_meta_data->>'date_of_birth')::DATE,
+    v_college_id,
+    NEW.raw_user_meta_data->>'college_name',
+    COALESCE(NEW.raw_user_meta_data->>'college_email', NEW.email),
+    v_domain
   )
   ON CONFLICT (id) DO NOTHING;
   RETURN NEW;
@@ -120,9 +158,7 @@ CREATE TRIGGER update_profiles_updated_at
   FOR EACH ROW
   EXECUTE PROCEDURE public.set_updated_at();
 
--- ============================================================
 -- CATEGORIES TABLE
--- ============================================================
 
 CREATE TABLE IF NOT EXISTS public.categories (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -143,9 +179,7 @@ CREATE TRIGGER update_categories_updated_at
   FOR EACH ROW
   EXECUTE PROCEDURE public.set_updated_at();
 
--- ============================================================
 -- LISTINGS TABLE
--- ============================================================
 
 CREATE TABLE IF NOT EXISTS public.listings (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -184,9 +218,7 @@ CREATE TRIGGER update_listings_updated_at
   FOR EACH ROW
   EXECUTE PROCEDURE public.set_updated_at();
 
--- ============================================================
 -- LISTING IMAGES TABLE
--- ============================================================
 
 CREATE TABLE IF NOT EXISTS public.listing_images (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -197,9 +229,7 @@ CREATE TABLE IF NOT EXISTS public.listing_images (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- ============================================================
 -- CONVERSATIONS TABLE
--- ============================================================
 
 CREATE TABLE IF NOT EXISTS public.conversations (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -232,9 +262,7 @@ CREATE TRIGGER update_conversations_updated_at
   FOR EACH ROW
   EXECUTE PROCEDURE public.set_updated_at();
 
--- ============================================================
 -- MESSAGES TABLE
--- ============================================================
 
 CREATE TABLE IF NOT EXISTS public.messages (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -254,9 +282,7 @@ CREATE TABLE IF NOT EXISTS public.messages (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- ============================================================
 -- EVENTS TABLE
--- ============================================================
 
 CREATE TABLE IF NOT EXISTS public.events (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -297,9 +323,7 @@ CREATE TRIGGER update_events_updated_at
   FOR EACH ROW
   EXECUTE PROCEDURE public.set_updated_at();
 
--- ============================================================
--- EVENT RSVPs TABLE
--- ============================================================
+-- EVENT RSVPS TABLE
 
 CREATE TABLE IF NOT EXISTS public.event_rsvps (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -322,9 +346,7 @@ CREATE TRIGGER update_event_rsvps_updated_at
   FOR EACH ROW
   EXECUTE PROCEDURE public.set_updated_at();
 
--- ============================================================
 -- TRANSACTIONS TABLE
--- ============================================================
 
 CREATE TABLE IF NOT EXISTS public.transactions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -355,9 +377,7 @@ CREATE TRIGGER update_transactions_updated_at
   FOR EACH ROW
   EXECUTE PROCEDURE public.set_updated_at();
 
--- ============================================================
 -- REVIEWS TABLE
--- ============================================================
 
 CREATE TABLE IF NOT EXISTS public.reviews (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -389,9 +409,7 @@ CREATE TRIGGER update_reviews_updated_at
   FOR EACH ROW
   EXECUTE PROCEDURE public.set_updated_at();
 
--- ============================================================
 -- OFFERS TABLE
--- ============================================================
 
 CREATE TABLE IF NOT EXISTS public.offers (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -424,9 +442,7 @@ CREATE TRIGGER update_offers_updated_at
   FOR EACH ROW
   EXECUTE PROCEDURE public.set_updated_at();
 
--- ============================================================
 -- SAVED ITEMS TABLE (Favorites/Wishlist)
--- ============================================================
 
 CREATE TABLE IF NOT EXISTS public.saved_items (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -437,9 +453,7 @@ CREATE TABLE IF NOT EXISTS public.saved_items (
   UNIQUE(user_id, listing_id)
 );
 
--- ============================================================
 -- NOTIFICATIONS TABLE
--- ============================================================
 
 CREATE TABLE IF NOT EXISTS public.notifications (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -462,9 +476,7 @@ CREATE TABLE IF NOT EXISTS public.notifications (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- ============================================================
 -- REPORTS TABLE (User reports/moderation)
--- ============================================================
 
 CREATE TABLE IF NOT EXISTS public.reports (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -498,9 +510,7 @@ CREATE TRIGGER update_reports_updated_at
   FOR EACH ROW
   EXECUTE PROCEDURE public.set_updated_at();
 
--- ============================================================
 -- BLOCKED USERS TABLE
--- ============================================================
 
 CREATE TABLE IF NOT EXISTS public.blocked_users (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -513,13 +523,17 @@ CREATE TABLE IF NOT EXISTS public.blocked_users (
   CHECK (blocker_id != blocked_id)
 );
 
--- ============================================================
 -- INDEXES FOR PERFORMANCE
--- ============================================================
+
+-- Colleges indexes
+CREATE INDEX IF NOT EXISTS idx_colleges_domain ON public.colleges(domain);
+CREATE INDEX IF NOT EXISTS idx_colleges_is_active ON public.colleges(is_active);
 
 -- Profiles indexes
 CREATE INDEX IF NOT EXISTS idx_profiles_email ON public.profiles(email);
 CREATE INDEX IF NOT EXISTS idx_profiles_college_email ON public.profiles(college_email);
+CREATE INDEX IF NOT EXISTS idx_profiles_college_id ON public.profiles(college_id);
+CREATE INDEX IF NOT EXISTS idx_profiles_date_of_birth ON public.profiles(date_of_birth);
 CREATE INDEX IF NOT EXISTS idx_profiles_is_verified ON public.profiles(is_verified);
 CREATE INDEX IF NOT EXISTS idx_profiles_account_type ON public.profiles(account_type);
 CREATE INDEX IF NOT EXISTS idx_profiles_last_active_at ON public.profiles(last_active_at DESC);
@@ -611,10 +625,9 @@ CREATE INDEX IF NOT EXISTS idx_reports_reviewed_by ON public.reports(reviewed_by
 CREATE INDEX IF NOT EXISTS idx_blocked_users_blocker_id ON public.blocked_users(blocker_id);
 CREATE INDEX IF NOT EXISTS idx_blocked_users_blocked_id ON public.blocked_users(blocked_id);
 
--- ============================================================
 -- ROW LEVEL SECURITY
--- ============================================================
 
+ALTER TABLE public.colleges ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.listings ENABLE ROW LEVEL SECURITY;
@@ -631,9 +644,7 @@ ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.reports ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.blocked_users ENABLE ROW LEVEL SECURITY;
 
--- ============================================================
 -- PERMISSIONS
--- ============================================================
 
 GRANT USAGE ON SCHEMA public TO anon;
 GRANT USAGE ON SCHEMA public TO authenticated;
@@ -646,9 +657,14 @@ GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon;
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO authenticated;
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO anon;
 
--- ============================================================
--- INITIAL DATA (Categories)
--- ============================================================
+-- INITIAL DATA
+
+-- Colleges
+INSERT INTO public.colleges (name, domain, location) VALUES
+  ('George Brown College', 'georgebrown.ca', 'Toronto, ON')
+ON CONFLICT (domain) DO NOTHING;
+
+-- Categories
 
 INSERT INTO public.categories (name, slug, description, icon, display_order) VALUES
   ('Textbooks', 'textbooks', 'Buy and sell course textbooks', '📚', 1),
