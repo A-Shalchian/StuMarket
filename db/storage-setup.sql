@@ -1,7 +1,5 @@
--- ============================================================
 -- SUPABASE STORAGE SETUP
 -- Run this in Supabase SQL Editor after creating buckets manually
--- ============================================================
 
 -- IMPORTANT: You must create these buckets manually in Supabase Storage UI:
 -- 1. listing-images (public bucket)
@@ -9,9 +7,7 @@
 
 -- Then run this SQL to set up RLS policies
 
--- ============================================================
 -- LISTING IMAGES BUCKET POLICIES
--- ============================================================
 
 -- Allow authenticated users to upload images to their own listing folders
 CREATE POLICY "Users can upload listing images"
@@ -44,9 +40,7 @@ USING (
   )
 );
 
--- ============================================================
 -- AVATARS BUCKET POLICIES
--- ============================================================
 
 -- Allow users to upload their own avatar
 CREATE POLICY "Users can upload own avatar"

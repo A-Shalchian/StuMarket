@@ -16,8 +16,22 @@ export async function GET(request: Request) {
     }
 
     if (data.user) {
-      // Simply redirect to dashboard - no verification required
-      return NextResponse.redirect(`${origin}/dashboard`)
+      // Update the profile to set is_verified to true
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          is_verified: true,
+          verified_at: new Date().toISOString(),
+          account_type: 'verified_student'
+        })
+        .eq('id', data.user.id)
+
+      if (profileError) {
+        console.error('Profile update error:', profileError)
+      }
+
+      // Redirect to dashboard with verification success
+      return NextResponse.redirect(`${origin}/dashboard?verified=true`)
     }
   }
 

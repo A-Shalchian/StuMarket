@@ -7,7 +7,7 @@ export default async function DashboardPage() {
   const user = await getUser()
 
   if (!user) {
-    redirect('/')
+    redirect('/login')
   }
 
   // Get user profile from database

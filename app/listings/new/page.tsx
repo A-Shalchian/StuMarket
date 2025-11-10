@@ -437,7 +437,7 @@ export default function CreateListingPage() {
                         </svg>
                       </button>
                       {index === 0 && (
-                        <div className="absolute bottom-2 left-2 bg-accent text-white text-xs px-2 py-1 rounded">
+                        <div className="absolute bottom-2 left-2 bg-accent text-accent-text text-xs px-2 py-1 rounded">
                           Primary
                         </div>
                       )}
@@ -478,7 +478,7 @@ export default function CreateListingPage() {
               <button
                 type="button"
                 onClick={() => router.back()}
-                className="flex-1 px-6 py-3 bg-surface hover:bg-surface/80 text-text font-medium rounded-xl transition-colors"
+                className="flex-1 px-6 py-3 bg-surface hover:bg-surface/80 text-text font-medium rounded-xl transition-colors border border-surface"
                 disabled={isLoading}
               >
                 Cancel
@@ -486,7 +486,7 @@ export default function CreateListingPage() {
               <button
                 type="submit"
                 disabled={isLoading || !userProfile.is_verified}
-                className="flex-1 px-6 py-3 bg-accent hover:bg-accent-hover text-white font-medium rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-6 py-3 bg-accent hover:bg-accent-hover text-accent-text font-medium rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? 'Creating Listing...' : 'Create Listing'}
               </button>

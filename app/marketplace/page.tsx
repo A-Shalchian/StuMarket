@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -33,6 +33,32 @@ interface Listing {
   }[];
 }
 
+interface RawListing {
+  id: string;
+  title: string;
+  price: number;
+  condition: string;
+  status: string;
+  created_at: string;
+  seller: {
+    full_name: string;
+    avatar_url: string | null;
+  } | {
+    full_name: string;
+    avatar_url: string | null;
+  }[];
+  category: {
+    name: string;
+    icon: string;
+  } | {
+    name: string;
+    icon: string;
+  }[] | null;
+  images: {
+    image_url: string;
+  }[];
+}
+
 export default function MarketplacePage() {
   const router = useRouter();
   const supabase = createClient();
@@ -45,16 +71,7 @@ export default function MarketplacePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isVerified, setIsVerified] = useState(false);
 
-  useEffect(() => {
-    checkVerification();
-    fetchCategories();
-  }, []);
-
-  useEffect(() => {
-    fetchListings();
-  }, [selectedCategory, sortBy]);
-
-  const checkVerification = async () => {
+  const checkVerification = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
@@ -69,9 +86,9 @@ export default function MarketplacePage() {
       .single();
 
     setIsVerified(profile?.is_verified || false);
-  };
+  }, [supabase]);
 
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     const { data } = await supabase
       .from('categories')
       .select('id, name, icon, slug')
@@ -79,9 +96,9 @@ export default function MarketplacePage() {
       .order('display_order', { ascending: true });
 
     setCategories(data || []);
-  };
+  }, [supabase]);
 
-  const fetchListings = async () => {
+  const fetchListings = useCallback(async () => {
     setIsLoading(true);
 
     try {
@@ -132,8 +149,14 @@ export default function MarketplacePage() {
         console.error('Error details:', JSON.stringify(error, null, 2));
         setListings([]);
       } else {
-        console.log('Fetched listings:', data?.length || 0);
-        setListings(data || []);
+        console.log('Fetched listings:', data?.length ?? 0);
+        // Transform the data to match our Listing type
+        const transformedData = (data ?? []).map((item: RawListing): Listing => ({
+          ...item,
+          seller: Array.isArray(item.seller) ? item.seller[0] : item.seller,
+          category: item.category && Array.isArray(item.category) ? item.category[0] : item.category,
+        }));
+        setListings(transformedData);
       }
     } catch (err) {
       console.error('Exception fetching listings:', err);
@@ -141,7 +164,16 @@ export default function MarketplacePage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [supabase, selectedCategory, sortBy, categories]);
+
+  useEffect(() => {
+    checkVerification();
+    fetchCategories();
+  }, [checkVerification, fetchCategories]);
+
+  useEffect(() => {
+    fetchListings();
+  }, [fetchListings]);
 
   const filteredListings = listings.filter(listing =>
     listing.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -157,36 +189,7 @@ export default function MarketplacePage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="bg-surface shadow-sm border-b border-surface/20 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/dashboard" className="flex items-center">
-              <span className="text-2xl font-bold text-text">Stu</span>
-              <span className="text-2xl font-bold text-accent">Market</span>
-            </Link>
-
-            <div className="flex items-center gap-4">
-              {isVerified && (
-                <Link
-                  href="/listings/new"
-                  className="bg-accent hover:bg-accent-hover text-white px-4 py-2 rounded-xl font-medium transition-colors"
-                >
-                  + Create Listing
-                </Link>
-              )}
-              <Link
-                href="/dashboard"
-                className="text-text/60 hover:text-accent transition-colors"
-              >
-                Dashboard
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
-
+    <div className="min-h-screen bg-background pt-16">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page Title */}
         <div className="mb-8">

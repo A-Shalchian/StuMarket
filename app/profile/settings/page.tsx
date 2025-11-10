@@ -87,7 +87,7 @@ export default function SettingsPage() {
               }`}
             >
               <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                className={`inline-block h-4 w-4 transform rounded-full bg-background transition-transform ${
                   settings.email_notifications ? "translate-x-6" : "translate-x-1"
                 }`}
               />
@@ -106,7 +106,7 @@ export default function SettingsPage() {
               }`}
             >
               <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                className={`inline-block h-4 w-4 transform rounded-full bg-background transition-transform ${
                   settings.push_notifications ? "translate-x-6" : "translate-x-1"
                 }`}
               />
@@ -125,7 +125,7 @@ export default function SettingsPage() {
               }`}
             >
               <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                className={`inline-block h-4 w-4 transform rounded-full bg-background transition-transform ${
                   settings.sms_notifications ? "translate-x-6" : "translate-x-1"
                 }`}
               />
@@ -144,7 +144,7 @@ export default function SettingsPage() {
               }`}
             >
               <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                className={`inline-block h-4 w-4 transform rounded-full bg-background transition-transform ${
                   settings.message_notifications ? "translate-x-6" : "translate-x-1"
                 }`}
               />
@@ -163,7 +163,7 @@ export default function SettingsPage() {
               }`}
             >
               <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                className={`inline-block h-4 w-4 transform rounded-full bg-background transition-transform ${
                   settings.listing_notifications ? "translate-x-6" : "translate-x-1"
                 }`}
               />
@@ -182,7 +182,7 @@ export default function SettingsPage() {
               }`}
             >
               <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                className={`inline-block h-4 w-4 transform rounded-full bg-background transition-transform ${
                   settings.event_notifications ? "translate-x-6" : "translate-x-1"
                 }`}
               />
@@ -208,7 +208,7 @@ export default function SettingsPage() {
               }`}
             >
               <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                className={`inline-block h-4 w-4 transform rounded-full bg-background transition-transform ${
                   settings.privacy_show_phone ? "translate-x-6" : "translate-x-1"
                 }`}
               />
@@ -227,7 +227,7 @@ export default function SettingsPage() {
               }`}
             >
               <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                className={`inline-block h-4 w-4 transform rounded-full bg-background transition-transform ${
                   settings.privacy_show_email ? "translate-x-6" : "translate-x-1"
                 }`}
               />
@@ -247,7 +247,7 @@ export default function SettingsPage() {
           <button
             onClick={handleSave}
             disabled={loading}
-            className="px-6 py-2 bg-accent text-white rounded-lg hover:bg-accent/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-6 py-2 bg-accent text-accent-text rounded-lg hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? "Saving..." : "Save Settings"}
           </button>

@@ -176,7 +176,7 @@ export default function EditProfilePage() {
             <button
               type="submit"
               disabled={loading}
-              className="px-6 py-2 bg-accent text-white rounded-lg hover:bg-accent-hover transition-colors disabled:opacity-50"
+              className="px-6 py-2 bg-accent text-accent-text rounded-lg hover:bg-accent-hover transition-colors disabled:opacity-50"
             >
               {loading ? "Saving..." : "Save Changes"}
             </button>
