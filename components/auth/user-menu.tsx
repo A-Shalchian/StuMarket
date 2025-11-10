@@ -15,7 +15,7 @@ export default function UserMenu() {
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+        className="flex items-center gap-2 p-2 rounded-lg hover:bg-surface transition-colors"
       >
         <Image
           src={user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${user.email}`}
@@ -24,14 +24,14 @@ export default function UserMenu() {
           height={32}
           className="rounded-full"
         />
-        <span className="text-sm font-medium">{user.email}</span>
+        <span className="text-sm font-medium text-text">{user.email}</span>
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
+        <div className="absolute right-0 mt-2 w-48 bg-surface rounded-lg shadow-lg border border-surface/50 py-1 z-10">
           <button
             onClick={() => signOut()}
-            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+            className="w-full px-4 py-2 text-left text-sm text-text hover:bg-background transition-colors"
           >
             Sign out
           </button>

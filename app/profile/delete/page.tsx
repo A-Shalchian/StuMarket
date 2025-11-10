@@ -23,14 +23,15 @@ export default function DeleteAccountPage() {
     setError(null);
 
     try {
-      // Delete the user profile directly from the profiles table
-      const { error: deleteError } = await supabase
-        .from("profiles")
-        .delete()
-        .eq("id", user.id);
+      // Call the API route to delete the user
+      const response = await fetch('/api/delete-account', {
+        method: 'POST',
+      });
 
-      if (deleteError) {
-        throw new Error(deleteError.message);
+      const data = await response.json();
+
+      if (!response.ok || data.error) {
+        throw new Error(data.error || "Failed to delete account");
       }
 
       // Sign out and redirect

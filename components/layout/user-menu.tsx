@@ -48,7 +48,7 @@ export default function UserMenu() {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-surface/50 transition-colors"
       >
-        <div className="w-8 h-8 bg-gradient-to-br from-accent to-accent-hover rounded-full flex items-center justify-center text-white text-sm font-medium">
+        <div className="w-8 h-8 bg-gradient-to-br from-accent to-accent-hover rounded-full flex items-center justify-center text-accent-text text-sm font-medium">
           {getInitials(user.user_metadata?.full_name || user.email)}
         </div>
         <span className="hidden md:block text-sm font-medium text-text max-w-[150px] truncate">
