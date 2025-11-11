@@ -10,7 +10,7 @@ interface UserProfile {
   full_name: string | null;
   email: string | null;
   is_verified: boolean;
-  college: string | null;
+  college_name: string | null;
   college_email: string | null;
 }
 
@@ -123,10 +123,10 @@ export default function DashboardClient({ user, userProfile }: DashboardClientPr
             )}
           </div>
 
-          {profile?.is_verified && profile?.college && (
+          {profile?.is_verified && profile?.college_name && (
             <div className="mb-6 p-3 bg-accent/10 rounded-lg border border-accent/20">
               <p className="text-sm text-text/70">
-                <strong className="text-accent">{profile.college}</strong>
+                <strong className="text-accent">{profile.college_name}</strong>
                 {profile.college_email && ` • ${profile.college_email}`}
               </p>
             </div>

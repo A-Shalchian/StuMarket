@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -38,12 +38,7 @@ export default function CreateListingPage() {
   const [error, setError] = useState<string | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
-  useEffect(() => {
-    checkAuth();
-    fetchCategories();
-  }, []);
-
-  const checkAuth = async () => {
+  const checkAuth = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
@@ -67,9 +62,9 @@ export default function CreateListingPage() {
     if (!profile.is_verified) {
       setError('You must verify your student email before creating a listing.');
     }
-  };
+  }, [router, supabase]);
 
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     const { data, error } = await supabase
       .from('categories')
       .select('id, name, icon')
@@ -82,7 +77,12 @@ export default function CreateListingPage() {
     }
 
     setCategories(data || []);
-  };
+  }, [supabase]);
+
+  useEffect(() => {
+    checkAuth();
+    fetchCategories();
+  }, [checkAuth, fetchCategories]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -124,7 +124,7 @@ export default function CreateListingPage() {
       const fileExt = file.name.split('.').pop();
       const fileName = `${listingId}/${Date.now()}_${i}.${fileExt}`;
 
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from('listing-images')
         .upload(fileName, file);
 

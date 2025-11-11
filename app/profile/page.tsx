@@ -16,6 +16,27 @@ export default async function ProfilePage() {
     .eq("id", user.id)
     .single();
 
+  // Determine college name
+  let collegeName = profile?.college_name;
+
+  // If college_id exists, fetch college name
+  if (!collegeName && profile?.college_id) {
+    const { data: college } = await supabase
+      .from("colleges")
+      .select("name")
+      .eq("id", profile.college_id)
+      .single();
+
+    if (college) {
+      collegeName = college.name;
+    }
+  }
+
+  // Fallback: derive from email domain
+  if (!collegeName && user.email?.endsWith('@georgebrown.ca')) {
+    collegeName = 'George Brown College';
+  }
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -42,7 +63,7 @@ export default async function ProfilePage() {
 
             <div>
               <label className="text-sm font-medium text-text/70">College</label>
-              <p className="mt-1 text-text">{profile?.college || "Not set"}</p>
+              <p className="mt-1 text-text">{collegeName || "Not set"}</p>
             </div>
           </div>
         </div>

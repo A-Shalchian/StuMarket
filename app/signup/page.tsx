@@ -11,7 +11,7 @@ export default function SignupPage() {
   const [successEmail, setSuccessEmail] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [age, setAge] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -45,13 +45,47 @@ export default function SignupPage() {
       return;
     }
 
-    if (age && (parseInt(age) < 16 || parseInt(age) > 100)) {
-      toast.error("Please enter a valid age (16-100)");
-      setIsLoading(false);
-      return;
+    if (dateOfBirth) {
+      const birthDate = new Date(dateOfBirth);
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+
+      if (age < 16) {
+        toast.error("You must be at least 16 years old to sign up");
+        setIsLoading(false);
+        return;
+      }
     }
 
     try {
+      // First check if user exists in profiles
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('id, is_verified')
+        .eq('email', email)
+        .single();
+
+      if (existingProfile) {
+        if (existingProfile.is_verified) {
+          // User is verified, tell them to sign in
+          toast.error("An account with this email already exists. Please sign in instead.");
+          setIsLoading(false);
+          return;
+        } else {
+          // User exists but not verified - tell them to check email
+          toast.error("You already have an unverified account. Please check your email for the verification link, or sign in and request a new one.", {
+            duration: 7000,
+          });
+          setIsLoading(false);
+          return;
+        }
+      }
+
       const fullName = `${firstName} ${lastName}`;
 
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
@@ -64,7 +98,7 @@ export default function SignupPage() {
             email: email,
             college_email: email,
             college_domain: 'georgebrown.ca',
-            age: age ? parseInt(age) : null,
+            date_of_birth: dateOfBirth || null,
           }
         }
       });
@@ -95,7 +129,7 @@ export default function SignupPage() {
         setSuccess(true);
         setFirstName("");
         setLastName("");
-        setAge("");
+        setDateOfBirth("");
         setEmail("");
         setPassword("");
       }
@@ -189,14 +223,15 @@ export default function SignupPage() {
             </div>
 
             <div>
+              <label className="block text-sm font-medium text-text/70 mb-2 ml-1">
+                Date of Birth (Optional)
+              </label>
               <input
-                type="number"
-                placeholder="Age (Optional)"
-                value={age}
-                onChange={(e) => setAge(e.target.value)}
-                min="16"
-                max="100"
-                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-background border border-surface rounded-xl focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all text-text placeholder-text/50 text-sm sm:text-base"
+                type="date"
+                value={dateOfBirth}
+                onChange={(e) => setDateOfBirth(e.target.value)}
+                max={new Date().toISOString().split('T')[0]}
+                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-background border border-surface rounded-xl focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all text-text text-sm sm:text-base [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-70 hover:[&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:hover:scale-110 [&::-webkit-calendar-picker-indicator]:transition-all"
                 disabled={isLoading}
               />
             </div>

@@ -15,7 +15,8 @@ export default function EditProfilePage() {
   const [formData, setFormData] = useState({
     full_name: "",
     email: "",
-    college: "",
+    college_name: "",
+    date_of_birth: "",
     avatar_url: "",
   });
 
@@ -32,7 +33,8 @@ export default function EditProfilePage() {
       setFormData({
         full_name: data.full_name || "",
         email: data.email || "",
-        college: data.college || "",
+        college_name: data.college_name || "",
+        date_of_birth: data.date_of_birth || "",
         avatar_url: data.avatar_url || "",
       });
     }
@@ -56,7 +58,8 @@ export default function EditProfilePage() {
       .update({
         full_name: formData.full_name,
         email: formData.email,
-        college: formData.college,
+        college_name: formData.college_name,
+        date_of_birth: formData.date_of_birth || null,
         avatar_url: formData.avatar_url,
         updated_at: new Date().toISOString(),
       })
@@ -130,31 +133,27 @@ export default function EditProfilePage() {
                 </label>
                 <input
                   type="text"
-                  name="college"
-                  value={formData.college}
+                  name="college_name"
+                  value={formData.college_name}
                   onChange={handleChange}
                   className="w-full px-3 py-2 bg-background border border-surface rounded-lg focus:outline-none focus:ring-2 focus:ring-accent text-text"
-                  placeholder="New York, NY"
+                  placeholder="George Brown College"
                 />
               </div>
-            </div>
-          </div>
 
-          {/* Academic Information */}
-          <div>
-            <h2 className="text-lg font-semibold text-text mb-4">Academic Information</h2>
-            <div>
-              <label className="block text-sm font-medium text-text/70 mb-2">
-                College/University
-              </label>
-              <input
-                type="text"
-                name="college"
-                value={formData.college}
-                onChange={handleChange}
-                className="w-full px-3 py-2 bg-background border border-surface rounded-lg focus:outline-none focus:ring-2 focus:ring-accent text-text"
-                placeholder="Harvard University"
-              />
+              <div>
+                <label className="block text-sm font-medium text-text/70 mb-2">
+                  Date of Birth
+                </label>
+                <input
+                  type="date"
+                  name="date_of_birth"
+                  value={formData.date_of_birth}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 bg-background border border-surface rounded-lg focus:outline-none focus:ring-2 focus:ring-accent text-text [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-70 hover:[&::-webkit-calendar-picker-indicator]:opacity-100"
+                  max={new Date().toISOString().split('T')[0]}
+                />
+              </div>
             </div>
           </div>
 

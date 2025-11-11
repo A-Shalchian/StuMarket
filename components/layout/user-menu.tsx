@@ -92,7 +92,7 @@ export default function UserMenu() {
           </Link>
 
           <Link
-            href="/listings/my-listings"
+            href="/profile/listings"
             className="block px-4 py-2 text-sm text-text hover:bg-surface/50"
             onClick={() => setIsOpen(false)}
           >
