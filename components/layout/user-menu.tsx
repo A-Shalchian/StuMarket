@@ -65,46 +65,106 @@ export default function UserMenu() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-56 bg-surface rounded-lg shadow-lg border border-surface/50 py-1 z-50">
-          <div className="px-4 py-3 border-b border-surface/50">
+        <div className="absolute right-0 mt-3 w-64 bg-background border border-surface/30 rounded-xl shadow-2xl py-2 z-50 backdrop-blur-sm">
+          {/* User Info Header */}
+          <div className="px-4 py-3 border-b border-surface/20">
             <p className="text-sm font-medium text-text truncate">
               {user.user_metadata?.full_name || "User"}
             </p>
-            <p className="text-xs text-text/50 truncate">
+            <p className="text-xs text-text/60 truncate mt-0.5">
               {user.email}
             </p>
           </div>
 
-          <Link
-            href="/dashboard"
-            className="block px-4 py-2 text-sm text-text hover:bg-surface/50"
-            onClick={() => setIsOpen(false)}
-          >
-            Dashboard
-          </Link>
+          {/* Navigation Links */}
+          <div className="py-2">
+            <Link
+              href="/"
+              className="flex items-center gap-3 px-4 py-2.5 text-sm text-text/80 hover:text-text hover:bg-surface/40 transition-all duration-150"
+              onClick={() => setIsOpen(false)}
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+              </svg>
+              Marketplace
+            </Link>
 
-          <Link
-            href="/profile"
-            className="block px-4 py-2 text-sm text-text hover:bg-surface/50"
-            onClick={() => setIsOpen(false)}
-          >
-            Profile
-          </Link>
+            <Link
+              href="/events"
+              className="flex items-center gap-3 px-4 py-2.5 text-sm text-text/80 hover:text-text hover:bg-surface/40 transition-all duration-150"
+              onClick={() => setIsOpen(false)}
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              Parties/Events
+            </Link>
 
-          <Link
-            href="/listings/my-listings"
-            className="block px-4 py-2 text-sm text-text hover:bg-surface/50"
-            onClick={() => setIsOpen(false)}
-          >
-            My Listings
-          </Link>
+            <Link
+              href="/chat"
+              className="flex items-center gap-3 px-4 py-2.5 text-sm text-text/80 hover:text-text hover:bg-surface/40 transition-all duration-150"
+              onClick={() => setIsOpen(false)}
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+              Chat
+            </Link>
+          </div>
 
-          <div className="border-t border-surface/50 mt-1 pt-1">
+          {/* Divider */}
+          <div className="border-t border-surface/20 my-2"></div>
+
+          {/* Account Links */}
+          <div className="py-2">
+            <Link
+              href="/dashboard"
+              className="flex items-center gap-3 px-4 py-2.5 text-sm text-text/80 hover:text-text hover:bg-surface/40 transition-all duration-150"
+              onClick={() => setIsOpen(false)}
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5a2 2 0 012-2h4a2 2 0 012 2v2H8V5z" />
+              </svg>
+              Dashboard
+            </Link>
+
+            <Link
+              href="/profile"
+              className="flex items-center gap-3 px-4 py-2.5 text-sm text-text/80 hover:text-text hover:bg-surface/40 transition-all duration-150"
+              onClick={() => setIsOpen(false)}
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              Profile
+            </Link>
+
+            <Link
+              href="/listings/my-listings"
+              className="flex items-center gap-3 px-4 py-2.5 text-sm text-text/80 hover:text-text hover:bg-surface/40 transition-all duration-150"
+              onClick={() => setIsOpen(false)}
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+              My Listings
+            </Link>
+          </div>
+
+          {/* Divider */}
+          <div className="border-t border-surface/20 my-2"></div>
+
+          {/* Sign Out */}
+          <div className="py-2">
             <button
               onClick={handleSignOut}
-              className="block w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-surface/50"
+              className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-150"
             >
-              Sign Out
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              Log out
             </button>
           </div>
         </div>

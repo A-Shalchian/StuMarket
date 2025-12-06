@@ -122,7 +122,7 @@ export default async function ListingDetailPage({ params }: { params: { id: stri
                 {/* Thumbnail Gallery */}
                 {sortedImages.length > 1 && (
                   <div className="grid grid-cols-4 gap-2">
-                    {sortedImages.slice(1, 5).map((image) => (
+                    {sortedImages.slice(1, 5).map((image: ListingImage) => (
                       <div key={image.id} className="aspect-square relative rounded-lg overflow-hidden border border-surface cursor-pointer hover:border-accent transition-colors">
                         <Image
                           src={image.image_url}

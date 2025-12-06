@@ -149,7 +149,7 @@ CREATE TRIGGER update_categories_updated_at
 
 CREATE TABLE IF NOT EXISTS public.listings (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  seller_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  seller_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   category_id UUID REFERENCES public.categories(id) ON DELETE SET NULL,
 
   -- Listing details
@@ -204,8 +204,8 @@ CREATE TABLE IF NOT EXISTS public.listing_images (
 CREATE TABLE IF NOT EXISTS public.conversations (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   listing_id UUID REFERENCES public.listings(id) ON DELETE CASCADE,
-  buyer_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  seller_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  buyer_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  seller_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
 
   -- Status
   status TEXT DEFAULT 'active' CHECK (status IN ('active', 'archived', 'blocked')),
@@ -213,7 +213,7 @@ CREATE TABLE IF NOT EXISTS public.conversations (
   -- Last message info (denormalized for performance)
   last_message_text TEXT,
   last_message_at TIMESTAMPTZ,
-  last_message_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  last_message_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
 
   -- Unread counts
   buyer_unread_count INTEGER DEFAULT 0,
@@ -239,7 +239,7 @@ CREATE TRIGGER update_conversations_updated_at
 CREATE TABLE IF NOT EXISTS public.messages (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   conversation_id UUID NOT NULL REFERENCES public.conversations(id) ON DELETE CASCADE,
-  sender_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  sender_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
 
   -- Message content
   message_text TEXT NOT NULL,
@@ -260,7 +260,7 @@ CREATE TABLE IF NOT EXISTS public.messages (
 
 CREATE TABLE IF NOT EXISTS public.events (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  organizer_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  organizer_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
 
   -- Event details
   title TEXT NOT NULL,
@@ -304,7 +304,7 @@ CREATE TRIGGER update_events_updated_at
 CREATE TABLE IF NOT EXISTS public.event_rsvps (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   event_id UUID NOT NULL REFERENCES public.events(id) ON DELETE CASCADE,
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
 
   -- RSVP status
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'going', 'maybe', 'declined')),
@@ -329,8 +329,8 @@ CREATE TRIGGER update_event_rsvps_updated_at
 CREATE TABLE IF NOT EXISTS public.transactions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   listing_id UUID NOT NULL REFERENCES public.listings(id) ON DELETE CASCADE,
-  buyer_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  seller_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  buyer_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  seller_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
 
   -- Transaction details
   price DECIMAL(10,2) NOT NULL CHECK (price >= 0),
@@ -361,8 +361,8 @@ CREATE TRIGGER update_transactions_updated_at
 
 CREATE TABLE IF NOT EXISTS public.reviews (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  reviewer_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  reviewed_user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  reviewer_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  reviewed_user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   transaction_id UUID REFERENCES public.transactions(id) ON DELETE SET NULL,
 
   -- Review content
@@ -396,8 +396,8 @@ CREATE TRIGGER update_reviews_updated_at
 CREATE TABLE IF NOT EXISTS public.offers (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   listing_id UUID NOT NULL REFERENCES public.listings(id) ON DELETE CASCADE,
-  buyer_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  seller_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  buyer_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  seller_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
 
   -- Offer details
   offer_price DECIMAL(10,2) NOT NULL CHECK (offer_price >= 0),
@@ -430,7 +430,7 @@ CREATE TRIGGER update_offers_updated_at
 
 CREATE TABLE IF NOT EXISTS public.saved_items (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   listing_id UUID NOT NULL REFERENCES public.listings(id) ON DELETE CASCADE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
 
@@ -443,7 +443,7 @@ CREATE TABLE IF NOT EXISTS public.saved_items (
 
 CREATE TABLE IF NOT EXISTS public.notifications (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
 
   -- Notification content
   type TEXT NOT NULL CHECK (type IN ('message', 'offer', 'review', 'transaction', 'event', 'system')),
@@ -468,7 +468,7 @@ CREATE TABLE IF NOT EXISTS public.notifications (
 
 CREATE TABLE IF NOT EXISTS public.reports (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  reporter_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  reporter_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
 
   -- What's being reported
   reported_type TEXT NOT NULL CHECK (reported_type IN ('listing', 'user', 'message', 'event', 'review')),
@@ -482,7 +482,7 @@ CREATE TABLE IF NOT EXISTS public.reports (
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'reviewing', 'resolved', 'dismissed')),
 
   -- Moderation
-  reviewed_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  reviewed_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
   reviewed_at TIMESTAMPTZ,
   resolution_notes TEXT,
   action_taken TEXT,
@@ -504,8 +504,8 @@ CREATE TRIGGER update_reports_updated_at
 
 CREATE TABLE IF NOT EXISTS public.blocked_users (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  blocker_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  blocked_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  blocker_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  blocked_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   reason TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
 
