@@ -16,6 +16,27 @@ export default async function ProfilePage() {
     .eq("id", user.id)
     .single();
 
+  // Determine college name
+  let collegeName = profile?.college_name;
+
+  // If college_id exists, fetch college name
+  if (!collegeName && profile?.college_id) {
+    const { data: college } = await supabase
+      .from("colleges")
+      .select("name")
+      .eq("id", profile.college_id)
+      .single();
+
+    if (college) {
+      collegeName = college.name;
+    }
+  }
+
+  // Fallback: derive from email domain
+  if (!collegeName && user.email?.endsWith('@georgebrown.ca')) {
+    collegeName = 'George Brown College';
+  }
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -42,7 +63,7 @@ export default async function ProfilePage() {
 
             <div>
               <label className="text-sm font-medium text-text/70">College</label>
-              <p className="mt-1 text-text">{profile?.college || "Not set"}</p>
+              <p className="mt-1 text-text">{collegeName || "Not set"}</p>
             </div>
           </div>
         </div>
@@ -54,14 +75,32 @@ export default async function ProfilePage() {
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-            <span className="text-sm text-green-600 dark:text-green-400">Active Student</span>
+            {profile?.is_verified ? (
+              <>
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-sm text-green-600 dark:text-green-400">Active Student</span>
+                <svg className="w-4 h-4 text-green-600 dark:text-green-400 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              </>
+            ) : (
+              <>
+                <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                <span className="text-sm text-yellow-600 dark:text-yellow-400">Pending Verification</span>
+              </>
+            )}
           </div>
 
           <div className="text-sm text-text/60">
             Member since {new Date(profile?.created_at || user.created_at).toLocaleDateString()}
           </div>
         </div>
+
+        {profile?.is_verified && profile?.verified_at && (
+          <div className="mt-3 text-xs text-text/50">
+            Verified on {new Date(profile.verified_at).toLocaleDateString()}
+          </div>
+        )}
       </div>
     </div>
   );

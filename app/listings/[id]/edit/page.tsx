@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
+import toast from 'react-hot-toast';
 
 interface Category {
   id: string;
@@ -11,13 +12,11 @@ interface Category {
   icon: string;
 }
 
-interface UserProfile {
-  id: string;
-  is_verified: boolean;
-}
 
-export default function CreateListingPage() {
+export default function EditListingPage() {
   const router = useRouter();
+  const params = useParams();
+  const listingId = params.id as string;
   const supabase = createClient();
 
   // Form state
@@ -29,40 +28,61 @@ export default function CreateListingPage() {
   const [location, setLocation] = useState('');
   const [campusPickup, setCampusPickup] = useState(true);
   const [deliveryAvailable, setDeliveryAvailable] = useState(false);
-  const [images, setImages] = useState<File[]>([]);
-  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+
+  // Image state
+  const [existingImages, setExistingImages] = useState<{ image_url: string; id: string; display_order: number }[]>([]);
+  const [newImages, setNewImages] = useState<File[]>([]);
+  const [newImagePreviews, setNewImagePreviews] = useState<string[]>([]);
+  const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
 
   // UI state
   const [categories, setCategories] = useState<Category[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
-  const checkAuth = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+  const fetchListing = useCallback(async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        router.push('/login');
+        return;
+      }
 
-    if (!user) {
-      router.push('/login');
-      return;
+      const { data: listing, error: fetchError } = await supabase
+        .from('listings')
+        .select(`
+          *,
+          images:listing_images(id, image_url, display_order)
+        `)
+        .eq('id', listingId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      if (listing.seller_id !== user.id) {
+        toast.error('You do not have permission to edit this listing');
+        router.push('/profile/listings');
+        return;
+      }
+
+      // Populate form
+      setTitle(listing.title);
+      setDescription(listing.description);
+      setPrice(listing.price.toString());
+      setCategoryId(listing.category_id);
+      setCondition(listing.condition);
+      setLocation(listing.location || '');
+      setCampusPickup(listing.campus_pickup);
+      setDeliveryAvailable(listing.delivery_available);
+      setExistingImages(listing.images.sort((a: { display_order: number }, b: { display_order: number }) => a.display_order - b.display_order));
+      setIsLoading(false);
+    } catch (err) {
+      console.error('Error fetching listing:', err);
+      toast.error('Failed to load listing');
+      router.push('/profile/listings');
     }
-
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('id, is_verified')
-      .eq('id', user.id)
-      .single();
-
-    if (!profile) {
-      setError('Profile not found');
-      return;
-    }
-
-    setUserProfile(profile);
-
-    if (!profile.is_verified) {
-      setError('You must verify your student email before creating a listing.');
-    }
-  }, [router, supabase]);
+  }, [listingId, router, supabase]);
 
   const fetchCategories = useCallback(async () => {
     const { data, error } = await supabase
@@ -80,15 +100,16 @@ export default function CreateListingPage() {
   }, [supabase]);
 
   useEffect(() => {
-    checkAuth();
+    fetchListing();
     fetchCategories();
-  }, [checkAuth, fetchCategories]);
+  }, [fetchListing, fetchCategories]);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleNewImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
+    const totalImages = existingImages.length - imagesToDelete.length + newImages.length + files.length;
 
-    if (files.length + images.length > 5) {
-      setError('You can upload a maximum of 5 images');
+    if (totalImages > 5) {
+      setError('You can have a maximum of 5 images');
       return;
     }
 
@@ -99,28 +120,36 @@ export default function CreateListingPage() {
       return;
     }
 
-    setImages(prev => [...prev, ...files]);
+    setNewImages(prev => [...prev, ...files]);
 
     // Create previews
     files.forEach(file => {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreviews(prev => [...prev, reader.result as string]);
+        setNewImagePreviews(prev => [...prev, reader.result as string]);
       };
       reader.readAsDataURL(file);
     });
   };
 
-  const removeImage = (index: number) => {
-    setImages(prev => prev.filter((_, i) => i !== index));
-    setImagePreviews(prev => prev.filter((_, i) => i !== index));
+  const removeExistingImage = (imageId: string) => {
+    setImagesToDelete(prev => [...prev, imageId]);
   };
 
-  const uploadImages = async (listingId: string): Promise<string[]> => {
+  const undoRemoveExistingImage = (imageId: string) => {
+    setImagesToDelete(prev => prev.filter(id => id !== imageId));
+  };
+
+  const removeNewImage = (index: number) => {
+    setNewImages(prev => prev.filter((_, i) => i !== index));
+    setNewImagePreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadNewImages = async (): Promise<string[]> => {
     const uploadedUrls: string[] = [];
 
-    for (let i = 0; i < images.length; i++) {
-      const file = images[i];
+    for (let i = 0; i < newImages.length; i++) {
+      const file = newImages[i];
       const fileExt = file.name.split('.').pop();
       const fileName = `${listingId}/${Date.now()}_${i}.${fileExt}`;
 
@@ -145,84 +174,85 @@ export default function CreateListingPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    setIsSaving(true);
     setError(null);
-
-    if (!userProfile?.is_verified) {
-      setError('You must verify your student email before creating a listing.');
-      setIsLoading(false);
-      return;
-    }
 
     if (!title || !description || !price || !categoryId) {
       setError('Please fill in all required fields');
-      setIsLoading(false);
+      setIsSaving(false);
       return;
     }
 
-    if (images.length === 0) {
-      setError('Please add at least one image');
-      setIsLoading(false);
+    const remainingImages = existingImages.length - imagesToDelete.length + newImages.length;
+    if (remainingImages === 0) {
+      setError('Please keep at least one image');
+      setIsSaving(false);
       return;
     }
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      // Create listing
-      const { data: listing, error: listingError } = await supabase
+      // Update listing
+      const { error: updateError } = await supabase
         .from('listings')
-        .insert({
-          seller_id: user.id,
-          category_id: categoryId,
+        .update({
           title,
           description,
           price: parseFloat(price),
+          category_id: categoryId,
           condition,
           location: location || null,
           campus_pickup: campusPickup,
           delivery_available: deliveryAvailable,
-          status: 'active',
-          expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
+          updated_at: new Date().toISOString(),
         })
-        .select()
-        .single();
+        .eq('id', listingId);
 
-      if (listingError) throw listingError;
+      if (updateError) throw updateError;
 
-      // Upload images
-      const imageUrls = await uploadImages(listing.id);
+      // Delete marked images
+      if (imagesToDelete.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('listing_images')
+          .delete()
+          .in('id', imagesToDelete);
 
-      // Insert listing images
-      const listingImages = imageUrls.map((url, index) => ({
-        listing_id: listing.id,
-        image_url: url,
-        display_order: index,
-        is_primary: index === 0,
-      }));
+        if (deleteError) throw deleteError;
+      }
 
-      const { error: imagesError } = await supabase
-        .from('listing_images')
-        .insert(listingImages);
+      // Upload new images
+      if (newImages.length > 0) {
+        const imageUrls = await uploadNewImages();
+        const currentMaxOrder = Math.max(...existingImages.map(img => img.display_order), -1);
 
-      if (imagesError) throw imagesError;
+        const listingImages = imageUrls.map((url, index) => ({
+          listing_id: listingId,
+          image_url: url,
+          display_order: currentMaxOrder + 1 + index,
+          is_primary: existingImages.length === 0 && index === 0,
+        }));
 
-      // Success! Redirect to listing detail page
-      router.push(`/listings/${listing.id}`);
+        const { error: imagesError } = await supabase
+          .from('listing_images')
+          .insert(listingImages);
+
+        if (imagesError) throw imagesError;
+      }
+
+      toast.success('Listing updated successfully!');
+      router.push(`/listings/${listingId}`);
     } catch (err) {
-      console.error('Error creating listing:', err);
-      setError('Failed to create listing. Please try again.');
-      setIsLoading(false);
+      console.error('Error updating listing:', err);
+      setError('Failed to update listing. Please try again.');
+      setIsSaving(false);
     }
   };
 
-  if (!userProfile) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin h-8 w-8 border-4 border-accent border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-text/60">Loading...</p>
+          <p className="text-text/60">Loading listing...</p>
         </div>
       </div>
     );
@@ -234,39 +264,17 @@ export default function CreateListingPage() {
         {/* Header */}
         <div className="mb-8">
           <Link
-            href="/dashboard"
+            href={`/listings/${listingId}`}
             className="inline-flex items-center text-text/60 hover:text-accent transition-colors mb-4"
           >
             <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            Back to Dashboard
+            Back to Listing
           </Link>
-          <h1 className="text-3xl font-bold text-text">Create New Listing</h1>
-          <p className="text-text/60 mt-2">List an item for sale on the marketplace</p>
+          <h1 className="text-3xl font-bold text-text">Edit Listing</h1>
+          <p className="text-text/60 mt-2">Update your listing details</p>
         </div>
-
-        {/* Verification Warning */}
-        {!userProfile.is_verified && (
-          <div className="mb-6 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-            <div className="flex items-center">
-              <svg className="w-5 h-5 text-yellow-400 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
-              <div>
-                <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
-                  Verification Required
-                </h3>
-                <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
-                  You must verify your student email before creating listings.{' '}
-                  <Link href="/dashboard" className="underline hover:text-yellow-900 dark:hover:text-yellow-100">
-                    Verify now
-                  </Link>
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Form */}
         <div className="bg-surface rounded-2xl shadow-lg p-6 border border-surface/20">
@@ -284,7 +292,7 @@ export default function CreateListingPage() {
                 placeholder="e.g., iPhone 13 Pro - Excellent Condition"
                 maxLength={100}
                 className="w-full px-4 py-3 bg-background border border-surface rounded-xl focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all text-text placeholder-text/50"
-                disabled={isLoading || !userProfile.is_verified}
+                disabled={isSaving}
               />
               <p className="text-xs text-text/50 mt-1">{title.length}/100 characters</p>
             </div>
@@ -302,7 +310,7 @@ export default function CreateListingPage() {
                 rows={6}
                 maxLength={2000}
                 className="w-full px-4 py-3 bg-background border border-surface rounded-xl focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all text-text placeholder-text/50 resize-none"
-                disabled={isLoading || !userProfile.is_verified}
+                disabled={isSaving}
               />
               <p className="text-xs text-text/50 mt-1">{description.length}/2000 characters</p>
             </div>
@@ -323,7 +331,7 @@ export default function CreateListingPage() {
                   min="0"
                   step="0.01"
                   className="w-full px-4 py-3 bg-background border border-surface rounded-xl focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all text-text placeholder-text/50"
-                  disabled={isLoading || !userProfile.is_verified}
+                  disabled={isSaving}
                 />
               </div>
 
@@ -337,7 +345,7 @@ export default function CreateListingPage() {
                   value={categoryId}
                   onChange={(e) => setCategoryId(e.target.value)}
                   className="w-full px-4 py-3 bg-background border border-surface rounded-xl focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all text-text"
-                  disabled={isLoading || !userProfile.is_verified}
+                  disabled={isSaving}
                 >
                   <option value="">Select a category</option>
                   {categories.map(cat => (
@@ -359,7 +367,7 @@ export default function CreateListingPage() {
                 value={condition}
                 onChange={(e) => setCondition(e.target.value as typeof condition)}
                 className="w-full px-4 py-3 bg-background border border-surface rounded-xl focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all text-text"
-                disabled={isLoading || !userProfile.is_verified}
+                disabled={isSaving}
               >
                 <option value="new">New</option>
                 <option value="like_new">Like New</option>
@@ -381,7 +389,7 @@ export default function CreateListingPage() {
                 onChange={(e) => setLocation(e.target.value)}
                 placeholder="e.g., Toronto, ON"
                 className="w-full px-4 py-3 bg-background border border-surface rounded-xl focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all text-text placeholder-text/50"
-                disabled={isLoading || !userProfile.is_verified}
+                disabled={isSaving}
               />
             </div>
 
@@ -395,7 +403,7 @@ export default function CreateListingPage() {
                   checked={campusPickup}
                   onChange={(e) => setCampusPickup(e.target.checked)}
                   className="w-5 h-5 text-accent bg-background border-surface rounded focus:ring-2 focus:ring-accent"
-                  disabled={isLoading || !userProfile.is_verified}
+                  disabled={isSaving}
                 />
                 <span className="text-sm text-text">Campus Pickup Available</span>
               </label>
@@ -406,7 +414,7 @@ export default function CreateListingPage() {
                   checked={deliveryAvailable}
                   onChange={(e) => setDeliveryAvailable(e.target.checked)}
                   className="w-5 h-5 text-accent bg-background border-surface rounded focus:ring-2 focus:ring-accent"
-                  disabled={isLoading || !userProfile.is_verified}
+                  disabled={isSaving}
                 />
                 <span className="text-sm text-text">Delivery Available</span>
               </label>
@@ -418,25 +426,43 @@ export default function CreateListingPage() {
                 Images * (Max 5 images, 5MB each)
               </label>
 
-              {imagePreviews.length > 0 && (
+              {/* Existing Images */}
+              {existingImages.length > 0 && (
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
-                  {imagePreviews.map((preview, index) => (
-                    <div key={index} className="relative group">
+                  {existingImages.map((image, index) => (
+                    <div key={image.id} className="relative group">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={preview}
-                        alt={`Preview ${index + 1}`}
-                        className="w-full h-32 object-cover rounded-lg border-2 border-surface"
+                        src={image.image_url}
+                        alt={`Image ${index + 1}`}
+                        className={`w-full h-32 object-cover rounded-lg border-2 ${
+                          imagesToDelete.includes(image.id)
+                            ? 'border-red-500 opacity-50'
+                            : 'border-surface'
+                        }`}
                       />
-                      <button
-                        type="button"
-                        onClick={() => removeImage(index)}
-                        className="absolute top-2 right-2 bg-red-500 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                      {index === 0 && (
+                      {!imagesToDelete.includes(image.id) ? (
+                        <button
+                          type="button"
+                          onClick={() => removeExistingImage(image.id)}
+                          className="absolute top-2 right-2 bg-red-500 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => undoRemoveExistingImage(image.id)}
+                          className="absolute top-2 right-2 bg-green-500 text-white p-1.5 rounded-full"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                        </button>
+                      )}
+                      {index === 0 && !imagesToDelete.includes(image.id) && (
                         <div className="absolute bottom-2 left-2 bg-accent text-accent-text text-xs px-2 py-1 rounded">
                           Primary
                         </div>
@@ -446,21 +472,50 @@ export default function CreateListingPage() {
                 </div>
               )}
 
-              {images.length < 5 && (
+              {/* New Images */}
+              {newImagePreviews.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+                  {newImagePreviews.map((preview, index) => (
+                    <div key={index} className="relative group">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={preview}
+                        alt={`New image ${index + 1}`}
+                        className="w-full h-32 object-cover rounded-lg border-2 border-green-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeNewImage(index)}
+                        className="absolute top-2 right-2 bg-red-500 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                      <div className="absolute bottom-2 left-2 bg-green-500 text-white text-xs px-2 py-1 rounded">
+                        New
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Upload new images */}
+              {(existingImages.length - imagesToDelete.length + newImages.length) < 5 && (
                 <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-surface rounded-xl cursor-pointer hover:border-accent transition-colors">
                   <div className="flex flex-col items-center justify-center pt-5 pb-6">
                     <svg className="w-10 h-10 text-text/50 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                     </svg>
-                    <p className="text-sm text-text/60">Click to upload images</p>
+                    <p className="text-sm text-text/60">Click to add more images</p>
                   </div>
                   <input
                     type="file"
                     accept="image/*"
                     multiple
-                    onChange={handleImageChange}
+                    onChange={handleNewImageChange}
                     className="hidden"
-                    disabled={isLoading || !userProfile.is_verified}
+                    disabled={isSaving}
                   />
                 </label>
               )}
@@ -473,22 +528,22 @@ export default function CreateListingPage() {
               </div>
             )}
 
-            {/* Submit Button */}
+            {/* Submit Buttons */}
             <div className="flex gap-4">
               <button
                 type="button"
                 onClick={() => router.back()}
                 className="flex-1 px-6 py-3 bg-surface hover:bg-surface/80 text-text font-medium rounded-xl transition-colors border border-surface"
-                disabled={isLoading}
+                disabled={isSaving}
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                disabled={isLoading || !userProfile.is_verified}
+                disabled={isSaving}
                 className="flex-1 px-6 py-3 bg-accent hover:bg-accent-hover text-accent-text font-medium rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? 'Creating Listing...' : 'Create Listing'}
+                {isSaving ? 'Saving Changes...' : 'Save Changes'}
               </button>
             </div>
           </form>

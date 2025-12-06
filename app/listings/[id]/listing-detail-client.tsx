@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 
@@ -18,17 +18,12 @@ export default function ListingDetailClient({ listingId, sellerId, isActive }: L
   const [isSaved, setIsSaved] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    checkAuth();
-    checkIfSaved();
-  }, []);
-
-  const checkAuth = async () => {
+  const checkAuth = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
     setCurrentUserId(user?.id || null);
-  };
+  }, [supabase]);
 
-  const checkIfSaved = async () => {
+  const checkIfSaved = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
@@ -40,7 +35,12 @@ export default function ListingDetailClient({ listingId, sellerId, isActive }: L
       .single();
 
     setIsSaved(!!data);
-  };
+  }, [supabase, listingId]);
+
+  useEffect(() => {
+    checkAuth();
+    checkIfSaved();
+  }, [checkAuth, checkIfSaved]);
 
   const handleContactSeller = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -167,7 +167,7 @@ export default function ListingDetailClient({ listingId, sellerId, isActive }: L
           <button
             onClick={handleContactSeller}
             disabled={isLoading}
-            className="w-full bg-accent hover:bg-accent-hover text-white font-medium py-4 px-6 rounded-xl transition-colors disabled:opacity-50"
+            className="w-full bg-accent hover:bg-accent-hover text-accent-text font-medium py-4 px-6 rounded-xl transition-colors disabled:opacity-50"
           >
             {isLoading ? 'Loading...' : 'Contact Seller'}
           </button>

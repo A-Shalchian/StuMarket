@@ -1,11 +1,7 @@
--- ============================================================
 -- STUMARKET - ROW LEVEL SECURITY POLICIES
 -- Run this AFTER db.sql to set up all security policies
--- ============================================================
 
--- ============================================================
 -- HELPER FUNCTIONS (Must be defined BEFORE policies)
--- ============================================================
 
 -- Function to check if user is verified
 CREATE OR REPLACE FUNCTION is_verified_user()
@@ -71,9 +67,21 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- ============================================================
+-- COLLEGES TABLE POLICIES
+
+-- Anyone can view active colleges
+DROP POLICY IF EXISTS "Anyone can view active colleges" ON public.colleges;
+CREATE POLICY "Anyone can view active colleges"
+  ON public.colleges FOR SELECT
+  USING (is_active = true);
+
+-- Only admins can modify colleges
+DROP POLICY IF EXISTS "Admins can modify colleges" ON public.colleges;
+CREATE POLICY "Admins can modify colleges"
+  ON public.colleges FOR ALL
+  USING (is_moderator());
+
 -- PROFILES TABLE POLICIES
--- ============================================================
 
 -- Anyone can view profiles (needed for public marketplace)
 -- Access control happens at application level for sensitive fields
@@ -96,15 +104,7 @@ CREATE POLICY "Users can insert own profile"
   ON public.profiles FOR INSERT
   WITH CHECK (auth.uid() = id);
 
--- Users can delete their own profile
-DROP POLICY IF EXISTS "Users can delete own profile" ON public.profiles;
-CREATE POLICY "Users can delete own profile"
-  ON public.profiles FOR DELETE
-  USING (auth.uid() = id);
-
--- ============================================================
 -- CATEGORIES TABLE POLICIES
--- ============================================================
 
 -- Everyone can view active categories
 DROP POLICY IF EXISTS "Anyone can view active categories" ON public.categories;
@@ -130,9 +130,7 @@ CREATE POLICY "Admins can delete categories"
   ON public.categories FOR DELETE
   USING (is_moderator());
 
--- ============================================================
 -- LISTINGS TABLE POLICIES
--- ============================================================
 
 -- Anyone can view active listings (public marketplace)
 DROP POLICY IF EXISTS "Anyone can view active listings" ON public.listings;
@@ -164,9 +162,7 @@ CREATE POLICY "Users can delete own listings"
   ON public.listings FOR DELETE
   USING (auth.uid() = seller_id);
 
--- ============================================================
 -- LISTING IMAGES TABLE POLICIES
--- ============================================================
 
 -- Anyone can view images for active listings
 DROP POLICY IF EXISTS "Anyone can view listing images" ON public.listing_images;
@@ -228,9 +224,7 @@ CREATE POLICY "Sellers can delete own listing images"
     )
   );
 
--- ============================================================
 -- CONVERSATIONS TABLE POLICIES
--- ============================================================
 
 -- Participants can view their conversations
 DROP POLICY IF EXISTS "Participants can view conversations" ON public.conversations;
@@ -256,9 +250,7 @@ CREATE POLICY "Participants can delete conversations"
   ON public.conversations FOR DELETE
   USING (auth.uid() = buyer_id OR auth.uid() = seller_id);
 
--- ============================================================
 -- MESSAGES TABLE POLICIES
--- ============================================================
 
 -- Conversation participants can view messages
 DROP POLICY IF EXISTS "Participants can view messages" ON public.messages;
@@ -297,9 +289,7 @@ CREATE POLICY "Users can delete own messages"
   ON public.messages FOR DELETE
   USING (auth.uid() = sender_id);
 
--- ============================================================
 -- EVENTS TABLE POLICIES
--- ============================================================
 
 -- Verified students can view public events
 DROP POLICY IF EXISTS "Verified students can view public events" ON public.events;
@@ -328,9 +318,7 @@ CREATE POLICY "Organizers can delete own events"
   ON public.events FOR DELETE
   USING (auth.uid() = organizer_id);
 
--- ============================================================
 -- EVENT RSVPS TABLE POLICIES
--- ============================================================
 
 -- Users can view RSVPs for events they can see
 DROP POLICY IF EXISTS "Users can view event RSVPs" ON public.event_rsvps;
@@ -373,9 +361,7 @@ CREATE POLICY "Users can delete own RSVPs"
   ON public.event_rsvps FOR DELETE
   USING (auth.uid() = user_id);
 
--- ============================================================
 -- TRANSACTIONS TABLE POLICIES
--- ============================================================
 
 -- Participants can view their transactions
 DROP POLICY IF EXISTS "Participants can view transactions" ON public.transactions;
@@ -395,9 +381,7 @@ CREATE POLICY "Participants can update transactions"
   ON public.transactions FOR UPDATE
   USING (auth.uid() = buyer_id OR auth.uid() = seller_id);
 
--- ============================================================
 -- REVIEWS TABLE POLICIES
--- ============================================================
 
 -- Everyone can view visible reviews
 DROP POLICY IF EXISTS "Anyone can view visible reviews" ON public.reviews;
@@ -431,9 +415,7 @@ CREATE POLICY "Users can delete own reviews"
   ON public.reviews FOR DELETE
   USING (auth.uid() = reviewer_id);
 
--- ============================================================
 -- OFFERS TABLE POLICIES
--- ============================================================
 
 -- Participants can view offers
 DROP POLICY IF EXISTS "Participants can view offers" ON public.offers;
@@ -459,9 +441,7 @@ CREATE POLICY "Buyers can delete offers"
   ON public.offers FOR DELETE
   USING (auth.uid() = buyer_id);
 
--- ============================================================
 -- SAVED ITEMS TABLE POLICIES
--- ============================================================
 
 -- Users can view their own saved items
 DROP POLICY IF EXISTS "Users can view own saved items" ON public.saved_items;
@@ -481,9 +461,7 @@ CREATE POLICY "Users can delete saved items"
   ON public.saved_items FOR DELETE
   USING (auth.uid() = user_id);
 
--- ============================================================
 -- NOTIFICATIONS TABLE POLICIES
--- ============================================================
 
 -- Users can view their own notifications
 DROP POLICY IF EXISTS "Users can view own notifications" ON public.notifications;
@@ -509,9 +487,7 @@ CREATE POLICY "Users can delete own notifications"
   ON public.notifications FOR DELETE
   USING (auth.uid() = user_id);
 
--- ============================================================
 -- REPORTS TABLE POLICIES
--- ============================================================
 
 -- Users can view their own reports
 DROP POLICY IF EXISTS "Users can view own reports" ON public.reports;
@@ -537,9 +513,7 @@ CREATE POLICY "Moderators can update reports"
   ON public.reports FOR UPDATE
   USING (is_moderator());
 
--- ============================================================
 -- BLOCKED USERS TABLE POLICIES
--- ============================================================
 
 -- Users can view their own blocks
 DROP POLICY IF EXISTS "Users can view own blocks" ON public.blocked_users;
@@ -559,9 +533,7 @@ CREATE POLICY "Users can unblock others"
   ON public.blocked_users FOR DELETE
   USING (auth.uid() = blocker_id);
 
--- ============================================================
 -- STORAGE POLICIES - AVATARS BUCKET
--- ============================================================
 
 -- Drop existing avatar policies
 DROP POLICY IF EXISTS "Users can upload own avatars" ON storage.objects;
@@ -602,9 +574,7 @@ CREATE POLICY "Users can delete own avatars"
     (storage.foldername(name))[1] = auth.uid()::text
   );
 
--- ============================================================
 -- STORAGE POLICIES - LISTING IMAGES BUCKET
--- ============================================================
 
 -- Drop existing listing image policies
 DROP POLICY IF EXISTS "Sellers can upload listing images" ON storage.objects;
@@ -645,9 +615,7 @@ CREATE POLICY "Sellers can delete listing images"
     (storage.foldername(name))[1] = auth.uid()::text
   );
 
--- ============================================================
 -- TRIGGERS
--- ============================================================
 
 -- Trigger to update user rating when review is created
 DROP TRIGGER IF EXISTS on_review_created ON public.reviews;
@@ -663,9 +631,7 @@ CREATE TRIGGER on_review_updated
   FOR EACH ROW
   EXECUTE FUNCTION update_user_rating();
 
--- ============================================================
 -- PERMISSIONS & GRANTS
--- ============================================================
 
 -- Grant schema usage
 GRANT USAGE ON SCHEMA public TO anon;

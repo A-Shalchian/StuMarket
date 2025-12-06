@@ -104,7 +104,7 @@ export default function ProfileLayout({
             {/* User Info Card */}
             <div className="bg-surface rounded-xl border border-surface/50 p-6">
               <div className="flex items-center space-x-4">
-                <div className="w-16 h-16 bg-gradient-to-br from-accent to-accent-hover rounded-full flex items-center justify-center text-white text-xl font-bold">
+                <div className="w-16 h-16 bg-gradient-to-br from-accent to-accent-hover rounded-full flex items-center justify-center text-accent-text text-xl font-bold">
                   {user.email?.[0].toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -129,7 +129,7 @@ export default function ProfileLayout({
                         href={item.href}
                         className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
                           isActive
-                            ? "bg-accent text-white"
+                            ? "bg-accent text-accent-text"
                             : "text-text/70 hover:bg-surface/50 hover:text-text"
                         }`}
                       >
@@ -156,7 +156,7 @@ export default function ProfileLayout({
                         href={item.href}
                         className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
                           isActive
-                            ? "bg-red-600 text-white"
+                            ? "bg-red-600 dark:bg-red-500 text-white"
                             : "text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/20"
                         }`}
                       >

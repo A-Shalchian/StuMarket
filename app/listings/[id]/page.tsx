@@ -11,36 +11,12 @@ interface ListingImage {
   is_primary: boolean;
 }
 
-interface Listing {
-  id: string;
-  title: string;
-  description: string;
-  price: number;
-  condition: string;
-  location: string | null;
-  campus_pickup: boolean;
-  delivery_available: boolean;
-  status: string;
-  view_count: number;
-  save_count: number;
-  created_at: string;
-  seller: {
-    id: string;
-    full_name: string;
-    avatar_url: string | null;
-    rating: number;
-    college: string | null;
-  };
-  category: {
-    id: string;
-    name: string;
-    icon: string;
-  } | null;
-  images: ListingImage[];
-}
-
-export default async function ListingDetailPage({ params }: { params: { id: string } }) {
+export default async function ListingDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const supabase = await createClient();
+
+  // Debug: Log the listing ID
+  console.log('Fetching listing with ID:', id);
 
   // Fetch listing with seller and category info
   const { data: listing, error } = await supabase
@@ -52,7 +28,7 @@ export default async function ListingDetailPage({ params }: { params: { id: stri
         full_name,
         avatar_url,
         rating,
-        college
+        college_name
       ),
       category:categories (
         id,
@@ -66,18 +42,27 @@ export default async function ListingDetailPage({ params }: { params: { id: stri
         is_primary
       )
     `)
-    .eq('id', params.id)
+    .eq('id', id)
     .single();
 
+  // Debug: Log the error
+  if (error) {
+    console.error('Error fetching listing:', error);
+    console.error('Error details:', JSON.stringify(error, null, 2));
+  }
+
   if (error || !listing) {
+    console.log('Listing not found or error occurred, showing 404');
     notFound();
   }
+
+  console.log('Listing fetched successfully:', listing.title);
 
   // Increment view count
   await supabase
     .from('listings')
     .update({ view_count: (listing.view_count || 0) + 1 })
-    .eq('id', params.id);
+    .eq('id', id);
 
   // Sort images by display order
   const sortedImages = listing.images.sort((a: ListingImage, b: ListingImage) => a.display_order - b.display_order);
@@ -234,8 +219,8 @@ export default async function ListingDetailPage({ params }: { params: { id: stri
                 </div>
                 <div>
                   <p className="font-medium text-text">{listing.seller.full_name}</p>
-                  {listing.seller.college && (
-                    <p className="text-sm text-text/60">{listing.seller.college}</p>
+                  {listing.seller.college_name && (
+                    <p className="text-sm text-text/60">{listing.seller.college_name}</p>
                   )}
                   <div className="flex items-center gap-1 mt-1">
                     <svg className="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">

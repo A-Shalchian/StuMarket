@@ -4,14 +4,13 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import UserMenu from '@/components/auth/user-menu';
-import VerificationModal from '@/components/verification/verification-modal';
 
 interface UserProfile {
   id: string;
   full_name: string | null;
   email: string | null;
   is_verified: boolean;
-  college: string | null;
+  college_name: string | null;
   college_email: string | null;
 }
 
@@ -27,14 +26,12 @@ interface DashboardClientProps {
 
 export default function DashboardClient({ user, userProfile }: DashboardClientProps) {
   const searchParams = useSearchParams();
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [profile, setProfile] = useState(userProfile);
+  const [profile] = useState(userProfile);
   const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null);
 
   useEffect(() => {
-    // Check for verification success/error from callback URL
+    // Check for verification success from callback URL
     const verified = searchParams.get('verified');
-    const error = searchParams.get('error');
 
     if (verified === 'true') {
       setNotification({ type: 'success', message: 'Email verified successfully! You now have full access to the marketplace.' });
@@ -42,34 +39,8 @@ export default function DashboardClient({ user, userProfile }: DashboardClientPr
       window.history.replaceState({}, '', '/dashboard');
       // Reload to get updated profile
       setTimeout(() => window.location.reload(), 2000);
-    } else if (error) {
-      const errorMessages: Record<string, string> = {
-        'invalid_link': 'Invalid verification link. Please try again.',
-        'invalid_token': 'Invalid verification token. Please request a new verification email.',
-        'token_expired': 'Verification link expired. Please request a new one.',
-        'profile_not_found': 'Profile not found. Please contact support.',
-        'verification_failed': 'Verification failed. Please request a new verification email.',
-        'profile_update_failed': 'Failed to update your profile. Please contact support.',
-        'unexpected_error': 'An unexpected error occurred. Please try again.',
-        'server_error': 'Server error. Please try again later.'
-      };
-      setNotification({ type: 'error', message: errorMessages[error] || 'Verification failed. Please try again.' });
-      // Clear the query param
-      window.history.replaceState({}, '', '/dashboard');
     }
   }, [searchParams]);
-
-  const handleVerificationSuccess = () => {
-    // Update the profile state to reflect verification
-    setProfile(prev => prev ? {
-      ...prev,
-      is_verified: true,
-      account_type: 'verified_student'
-    } : null);
-
-    // Refresh the page to get updated data
-    window.location.reload();
-  };
 
   return (
     <div className="min-h-screen bg-background transition-colors">
@@ -128,21 +99,11 @@ export default function DashboardClient({ user, userProfile }: DashboardClientPr
               </div>
               <div className="ml-3 flex-1">
                 <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
-                  Verify your student status
+                  Email Verification Required
                 </h3>
                 <div className="mt-1 text-sm text-yellow-700 dark:text-yellow-300">
-                  <p>Complete verification with your George Brown email to access the marketplace.</p>
-                </div>
-                <div className="mt-3">
-                  <button
-                    onClick={() => setIsModalOpen(true)}
-                    className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-yellow-800 dark:text-yellow-200 bg-yellow-100 dark:bg-yellow-900/40 hover:bg-yellow-200 dark:hover:bg-yellow-900/60 transition-colors"
-                  >
-                    Verify Now
-                    <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
+                  <p>Please check your <strong>@georgebrown.ca</strong> email inbox and click the verification link to access the marketplace.</p>
+                  <p className="mt-1 text-xs">Didn&apos;t receive the email? Check your spam folder or contact support.</p>
                 </div>
               </div>
             </div>
@@ -162,10 +123,10 @@ export default function DashboardClient({ user, userProfile }: DashboardClientPr
             )}
           </div>
 
-          {profile?.is_verified && profile?.college && (
+          {profile?.is_verified && profile?.college_name && (
             <div className="mb-6 p-3 bg-accent/10 rounded-lg border border-accent/20">
               <p className="text-sm text-text/70">
-                <strong className="text-accent">{profile.college}</strong>
+                <strong className="text-accent">{profile.college_name}</strong>
                 {profile.college_email && ` • ${profile.college_email}`}
               </p>
             </div>
@@ -188,14 +149,15 @@ export default function DashboardClient({ user, userProfile }: DashboardClientPr
             </Link>
 
             <Link
-              href={profile?.is_verified ? "/listings/new" : "/dashboard"}
+              href={profile?.is_verified ? "/listings/new" : "#"}
               onClick={(e) => {
                 if (!profile?.is_verified) {
                   e.preventDefault();
-                  setIsModalOpen(true);
                 }
               }}
-              className="bg-green-500/10 p-6 rounded-lg border border-green-500/20 hover:border-green-500/40 hover:bg-green-500/15 transition-all group"
+              className={`bg-green-500/10 p-6 rounded-lg border border-green-500/20 transition-all group ${
+                profile?.is_verified ? 'hover:border-green-500/40 hover:bg-green-500/15' : 'opacity-60 cursor-not-allowed'
+              }`}
             >
               <div className="flex items-start justify-between mb-2">
                 <h3 className="font-semibold text-green-600 dark:text-green-400">Sell Items</h3>
@@ -228,13 +190,6 @@ export default function DashboardClient({ user, userProfile }: DashboardClientPr
           </div>
         </div>
       </main>
-
-      {/* Verification Modal */}
-      <VerificationModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSuccess={handleVerificationSuccess}
-      />
     </div>
   );
 }

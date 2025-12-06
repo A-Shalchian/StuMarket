@@ -17,18 +17,32 @@ export default function Navbar() {
             <span className="text-2xl font-bold text-accent">Market</span>
           </Link>
 
+          <div className="hidden md:flex items-center gap-6">
+            <Link href="/marketplace" className="text-sm font-medium text-text/70 hover:text-text transition-colors">Marketplace</Link>
+            <Link href="/events" className="text-sm font-medium text-text/70 hover:text-text transition-colors">Parties/Events</Link>
+            <Link href="/chat" className="text-sm font-medium text-text/70 hover:text-text transition-colors">Chat</Link>
+          </div>
+
           <div className="flex items-center space-x-2">
             <ThemeToggle />
 
             {!loading && (
               <>
                 {user ? (
-                  <UserMenu />
+                  <>
+                    <Link
+                      href="/listings/new"
+                      className="hidden sm:block px-4 py-2 text-sm font-medium text-accent-text bg-accent hover:bg-accent-hover rounded-lg transition-colors"
+                    >
+                      Sell Item
+                    </Link>
+                    <UserMenu />
+                  </>
                 ) : (
                   <>
                     <Link
                       href="/login"
-                      className="px-4 py-2 text-sm font-medium text-white bg-accent hover:bg-accent-hover rounded-lg transition-colors"
+                      className="px-4 py-2 text-sm font-medium text-accent-text bg-accent hover:bg-accent-hover rounded-lg transition-colors"
                     >
                       Login
                     </Link>
