@@ -46,7 +46,7 @@ export default function UserMenu() {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-surface/50 transition-colors"
+        className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-surface/50 transition-colors cursor-pointer"
       >
         <div className="w-8 h-8 bg-gradient-to-br from-accent to-accent-hover rounded-full flex items-center justify-center text-accent-text text-sm font-medium">
           {getInitials(user.user_metadata?.full_name || user.email)}
@@ -77,7 +77,7 @@ export default function UserMenu() {
 
           <Link
             href="/dashboard"
-            className="block px-4 py-2 text-sm text-text hover:bg-surface/50"
+            className="block px-4 py-2 text-sm text-text hover:bg-surface/50 cursor-pointer"
             onClick={() => setIsOpen(false)}
           >
             Dashboard
@@ -85,7 +85,7 @@ export default function UserMenu() {
 
           <Link
             href="/profile"
-            className="block px-4 py-2 text-sm text-text hover:bg-surface/50"
+            className="block px-4 py-2 text-sm text-text hover:bg-surface/50 cursor-pointer"
             onClick={() => setIsOpen(false)}
           >
             Profile
@@ -93,16 +93,24 @@ export default function UserMenu() {
 
           <Link
             href="/profile/listings"
-            className="block px-4 py-2 text-sm text-text hover:bg-surface/50"
+            className="block px-4 py-2 text-sm text-text hover:bg-surface/50 cursor-pointer"
             onClick={() => setIsOpen(false)}
           >
             My Listings
           </Link>
 
+          <Link
+            href="/connections"
+            className="block px-4 py-2 text-sm text-text hover:bg-surface/50 cursor-pointer"
+            onClick={() => setIsOpen(false)}
+          >
+            Connections & Friends
+          </Link>
+
           <div className="border-t border-surface/50 mt-1 pt-1">
             <button
               onClick={handleSignOut}
-              className="block w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-surface/50"
+              className="block w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-surface/50 cursor-pointer"
             >
               Sign Out
             </button>

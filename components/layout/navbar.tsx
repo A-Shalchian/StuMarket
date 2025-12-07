@@ -18,9 +18,10 @@ export default function Navbar() {
           </Link>
 
           <div className="hidden md:flex items-center gap-6">
-            <Link href="/marketplace" className="text-sm font-medium text-text/70 hover:text-text transition-colors">Marketplace</Link>
-            <Link href="/events" className="text-sm font-medium text-text/70 hover:text-text transition-colors">Parties/Events</Link>
-            <Link href="/chat" className="text-sm font-medium text-text/70 hover:text-text transition-colors">Chat</Link>
+            <Link href="/marketplace" className="text-sm font-medium text-text/70 hover:text-text transition-colors cursor-pointer">Marketplace</Link>
+            <Link href="/events" className="text-sm font-medium text-text/70 hover:text-text transition-colors cursor-pointer">Parties/Events</Link>
+            <Link href="/messages" className="text-sm font-medium text-text/70 hover:text-text transition-colors cursor-pointer">Chat</Link>
+            <Link href="/connections" className="text-sm font-medium text-text/70 hover:text-text transition-colors cursor-pointer">Friends</Link>
           </div>
 
           <div className="flex items-center space-x-2">
@@ -32,7 +33,7 @@ export default function Navbar() {
                   <>
                     <Link
                       href="/listings/new"
-                      className="hidden sm:block px-4 py-2 text-sm font-medium text-accent-text bg-accent hover:bg-accent-hover rounded-lg transition-colors"
+                      className="hidden sm:block px-4 py-2 text-sm font-medium text-accent-text bg-accent hover:bg-accent-hover rounded-lg transition-colors cursor-pointer"
                     >
                       Sell Item
                     </Link>
@@ -42,7 +43,7 @@ export default function Navbar() {
                   <>
                     <Link
                       href="/login"
-                      className="px-4 py-2 text-sm font-medium text-accent-text bg-accent hover:bg-accent-hover rounded-lg transition-colors"
+                      className="px-4 py-2 text-sm font-medium text-accent-text bg-accent hover:bg-accent-hover rounded-lg transition-colors cursor-pointer"
                     >
                       Login
                     </Link>
